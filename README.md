@@ -1,14 +1,11 @@
 <table>
 <tr>
 
-<td width="45%" valign="middle">
+<td width="60%" valign="middle">
 
-<h1>
-Morphi
-</h1>
 
 <h3>
-Organoid Intelligence Platform
+Multi-dimensional organoid phenotype analysis platform
 </h3>
 
 <p>
@@ -25,9 +22,9 @@ instance segmentation, and viability assessment.
 
 </td>
 
-<td width="55%" align="center">
+<td width="40%" align="center">
 
-<img src="./docs/images/Picture1.png" width="600">
+<img src="./docs/images/Picture1.png" width="500">
 
 </td>
 
