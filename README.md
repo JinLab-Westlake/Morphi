@@ -1,2 +1,4 @@
 # Morphi
-A training and inference pipeline for orgnaoid alive and dead region analysis in pixel-level.
+Morphi: A platform integrated z-stack projection, fluorescence quantification, instance segmentation, organoid viability assessment.
+
+
