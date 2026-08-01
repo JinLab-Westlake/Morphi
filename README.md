@@ -21,4 +21,36 @@ instance segmentation, and viability assessment.
 
 ## Overview
 
-这里开始写下一部分内容。
+简要介绍平台解决什么问题，以及主要应用场景。
+
+## Key Features
+
+- Z-stack projection
+- Fluorescence quantification
+- Organoid instance segmentation
+- Viability assessment
+- Batch processing and visualization
+
+## Installation
+
+安装方法。
+
+## Quick Start
+
+最简运行示例。
+
+## Documentation
+
+详细文档入口。
+
+## Datasets
+
+训练集、测试集或示例数据说明。
+
+## Citation
+
+论文发表后的引用信息。
+
+## License
+
+代码许可证。
