@@ -1,30 +1,18 @@
-<div style="display:flex; align-items:center;">
+<img
+  src="./docs/images/Picture1.png"
+  align="right"
+  width="300"
+  alt="Multi-dimensional organoid analysis platform"
+/>
 
-<div style="flex:1; text-align:left;">
+### Multi-dimensional organoid analysis platform
 
-<h3>
-Multi-dimensional organoid analysis platform
-</h3>
-
-<p>
-AI-powered organoid analysis platform integrating 
+AI-powered organoid analysis platform integrating
 z-stack projection, fluorescence quantification,
 instance segmentation, and viability assessment.
-</p>
 
-<p>
-<a href="">Documentation</a> |
-<a href="">Datasets</a> |
-<a href="">Paper</a>
-</p>
+[Documentation](链接) |
+[Datasets](链接) |
+[Paper](链接)
 
-</div>
-
-
-<div style="flex:1; text-align:center;">
-
-<img src="./docs/images/Picture1.png" width="300">
-
-</div>
-
-</div>
+<br clear="right"/>
