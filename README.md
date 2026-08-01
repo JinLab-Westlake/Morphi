@@ -2,10 +2,10 @@
   src="./docs/images/Picture1.png"
   align="right"
   width="300"
-  alt="Multi-dimensional organoid phenotype analysis platform"
+  alt="Multi-dimensional organoid analysis platform"
 />
 
-### Multi-dimensional organoid phenotype analysis platform
+### Multi-dimensional organoid analysis platform
 
 AI-powered organoid analysis platform integrating
 z-stack projection, fluorescence quantification,
@@ -16,3 +16,9 @@ instance segmentation, and viability assessment.
 [Paper](链接)
 
 <br clear="right"/>
+
+---
+
+## Overview
+
+这里开始写下一部分内容。
