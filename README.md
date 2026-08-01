@@ -28,25 +28,25 @@ instance segmentation, and viability assessment.
 Morphi is an integrated software platform for automated, multi-dimensional analysis of organoid microscopy images. It provides a unified workflow from image preprocessing to quantitative, instance-level phenotypic assessment.
 
 * **Z-stack projection**
-  Converts multi-plane fluorescence image stacks into representative two-dimensional images for downstream analysis.
+
 
 * **Fluorescence quantification**
-  Measures fluorescence intensity, positive area, and related imaging features at both image and organoid-instance levels.
+
 
 * **Organoid instance segmentation**
-  Detects and segments individual organoids, enabling object-level morphological and fluorescence analysis.
+
 
 * **Viability assessment**
-  Quantifies viable and non-viable regions within each organoid and calculates instance-level viability or death ratios.
+
 
 * **Batch image processing**
-  Supports automated processing of large microscopy datasets using standardized analysis parameters.
+
 
 * **Multi-dimensional feature extraction**
-  Generates quantitative measurements describing organoid morphology, fluorescence signals, spatial characteristics, and viability.
+
 
 * **Result visualization and export**
-  Produces segmentation overlays, quantitative summaries, and structured output files for downstream statistical analysis.
+
 
 
 ## Installation
