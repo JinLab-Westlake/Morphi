@@ -1,2 +1,10 @@
 ._*
 .idea/
+# Generated build artifacts
+morphi/build/
+morphi/dist/
+morphi/*.spec
+__pycache__/
+*.pyc
+.DS_Store
+*.onnx

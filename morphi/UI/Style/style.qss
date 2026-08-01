@@ -1,0 +1,23 @@
+QGroupBox {
+    font-family: "Arial";
+    font-size: 12pt;
+    font-weight: bold;
+    color: #E0E0E0;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    margin-top: 10px; /* group title ; distance with content */
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    padding: 0 4px;
+}
+QPushButton {
+    font-size: 8 pt;
+    padding: 4px 8px;
+}
+QLabel {
+    font-size: 10pt;
+    color: #E0E0E0;
+}
+
