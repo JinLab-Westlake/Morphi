@@ -1,7 +1,7 @@
 <img
   src="./docs/images/Picture1.png"
   align="right"
-  width="300"
+  width="400"
   alt="Multi-dimensional organoid phenotype analysis platform"
 />
 
