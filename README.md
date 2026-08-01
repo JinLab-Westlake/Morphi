@@ -23,30 +23,41 @@ instance segmentation, and viability assessment.
 
 简要介绍平台解决什么问题，以及主要应用场景。
 
-## Key Features
-
-Morphi is an integrated software platform for automated, multi-dimensional analysis of organoid microscopy images. It provides a unified workflow from image preprocessing to quantitative, instance-level phenotypic assessment.
-
-* **Z-stack projection**
 
 
-* **Fluorescence quantification**
+## Repository Branches
 
+This repository is organized into multiple branches corresponding to the complete Morphi platform and its individual analysis modules.
 
-* **Organoid instance segmentation**
+### 1. `Morphi`
 
+The `Morphi` branch contains the complete integrated software platform. It combines image preprocessing, quantitative analysis, deep-learning-based segmentation, viability assessment, feature extraction, and result visualization within a unified workflow.
 
-* **Viability assessment**
+This branch is recommended for users who want to perform the full organoid image analysis pipeline.
 
+### 2. Functional Module Branches
 
-* **Batch image processing**
+The following branches provide standalone implementations of the major components used in Morphi.
 
+#### `z-stack-projection`
 
-* **Multi-dimensional feature extraction**
+Performs projection of multi-plane microscopy image stacks into representative two-dimensional images for downstream analysis.
 
+#### `fluorescence-quantification`
 
-* **Result visualization and export**
+Quantifies fluorescence signals from microscopy images, including image-level or organoid-level intensity measurements and fluorescence-positive regions.
 
+#### `DoANet`
+
+Provides the DoANet-based viability assessment module. It identifies viable and non-viable regions and calculates viability-related measurements for individual organoid instances.
+
+#### `organoid-instance-segmentation`
+
+Detects and segments individual organoids from microscopy images, enabling instance-level analysis rather than image-level aggregate measurements.
+
+#### `multi-dimensional-feature-extraction`
+
+Extracts quantitative features describing organoid morphology, fluorescence characteristics, viability, and other image-derived phenotypes.
 
 
 ## Installation
