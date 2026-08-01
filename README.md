@@ -39,11 +39,11 @@ This branch is recommended for users who want to perform the full organoid image
 
 The following branches provide standalone implementations of the major components used in Morphi.
 
-#### `z-stack-projection`
+#### `Z-stack-projection`
 
 Performs projection of multi-plane microscopy image stacks into representative two-dimensional images for downstream analysis.
 
-#### `fluorescence-quantification`
+#### `Fluorescence-quantification`
 
 Quantifies fluorescence signals from microscopy images, including image-level or organoid-level intensity measurements and fluorescence-positive regions.
 
@@ -51,11 +51,11 @@ Quantifies fluorescence signals from microscopy images, including image-level or
 
 Provides the DoANet-based viability assessment module. It identifies viable and non-viable regions and calculates viability-related measurements for individual organoid instances.
 
-#### `organoid-instance-segmentation`
+#### `Organoid-instance-segmentation`
 
 Detects and segments individual organoids from microscopy images, enabling instance-level analysis rather than image-level aggregate measurements.
 
-#### `multi-dimensional-feature-extraction`
+#### `Multi-dimensional-feature-extraction`
 
 Extracts quantitative features describing organoid morphology, fluorescence characteristics, viability, and other image-derived phenotypes.
 
