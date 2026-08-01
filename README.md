@@ -1,11 +1,9 @@
-<table>
-<tr>
+<div style="display:flex; align-items:center;">
 
-<td width="60%" valign="middle">
-
+<div style="flex:1; text-align:left;">
 
 <h3>
-Multi-dimensional organoid phenotype analysis platform
+Multi-dimensional organoid analysis platform
 </h3>
 
 <p>
@@ -20,13 +18,13 @@ instance segmentation, and viability assessment.
 <a href="">Paper</a>
 </p>
 
-</td>
+</div>
 
-<td width="40%" align="center">
 
-<img src="./docs/images/Picture1.png" width="500">
+<div style="flex:1; text-align:center;">
 
-</td>
+<img src="./docs/images/Picture1.png" width="300">
 
-</tr>
-</table>
+</div>
+
+</div>
