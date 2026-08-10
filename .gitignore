@@ -1,8 +1,8 @@
 ._*
 .idea/
 # Generated build artifacts
-morphi/build/
-morphi/dist/
+morphi-software/build/
+morphi-software/dist/
 morphi/*.spec
 __pycache__/
 *.pyc
