@@ -1,11 +1,13 @@
+
+
+## Morphi
+
 <img
   src="./docs/images/Picture1.png"
   align="right"
   width="350"
   alt="Multi-dimensional organoid phenotype analysis platform"
 />
-
-## Morphi
 
 AI-powered organoid analysis platform integrating:
 1. z-stack projection
