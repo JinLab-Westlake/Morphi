@@ -6,7 +6,7 @@
   src="./docs/images/Picture1.png"
   align="right"
   width="350"
-  alt="Multi-dimensional organoid phenotype analysis platform"
+  alt="Multi-dimensional organoid phenotype analysis software"
 />
 
 AI-powered organoid analysis platform integrating:
@@ -27,68 +27,6 @@ AI-powered organoid analysis platform integrating:
 <p align="center">
   <img src="docs/images/morphi_interface.png" width="600">
 </p>
-
-
-[//]: # (<h2>Installation</h2>)
-
-[//]: # ()
-[//]: # (<h3>macOS application</h3>)
-
-[//]: # ()
-[//]: # (<p>)
-
-[//]: # (  Download the latest <code>Morphi.app</code> from the)
-
-[//]: # (  <a href="https://github.com/xxx/Morphi/releases">Releases</a> page)
-
-[//]: # (  and move it to the <code>Applications</code> folder.)
-
-[//]: # (</p>)
-
-[//]: # ()
-[//]: # (<p>)
-
-[//]: # (  Morphi can then be launched directly from the Applications folder.)
-
-[//]: # (</p>)
-
-[//]: # ()
-[//]: # (<h4>Optional: Terminal launcher</h4>)
-
-[//]: # ()
-[//]: # (<p>)
-
-[//]: # (  To launch Morphi from Terminal using the <code>morphi</code> command,)
-
-[//]: # (  install the command-line launcher:)
-
-[//]: # (</p>)
-
-[//]: # ()
-[//]: # (<pre><code>sudo mkdir -p /usr/local/bin)
-
-[//]: # ()
-[//]: # (sudo tee /usr/local/bin/morphi &gt; /dev/null &lt;&lt;'EOF')
-
-[//]: # (#!/bin/sh)
-
-[//]: # (open "/Applications/Morphi.app")
-
-[//]: # (EOF)
-
-[//]: # ()
-[//]: # (sudo chmod +x /usr/local/bin/morphi</code></pre>)
-
-[//]: # ()
-[//]: # (<p>)
-
-[//]: # (  Morphi can then be launched from any directory:)
-
-[//]: # (</p>)
-
-[//]: # ()
-[//]: # (<pre><code>morphi</code></pre>)
-
 
 
 
