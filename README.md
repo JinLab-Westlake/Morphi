@@ -29,54 +29,65 @@ AI-powered organoid analysis platform integrating:
 </p>
 
 
-<h2>Installation</h2>
+[//]: # (<h2>Installation</h2>)
 
-<h3>macOS application</h3>
+[//]: # ()
+[//]: # (<h3>macOS application</h3>)
 
-<p>
-  Download the latest <code>Morphi.app</code> from the
-  <a href="https://github.com/xxx/Morphi/releases">Releases</a> page
-  and move it to the <code>Applications</code> folder.
-</p>
+[//]: # ()
+[//]: # (<p>)
 
-<p>
-  Morphi can then be launched directly from the Applications folder.
-</p>
+[//]: # (  Download the latest <code>Morphi.app</code> from the)
 
-<h4>Optional: Terminal launcher</h4>
+[//]: # (  <a href="https://github.com/xxx/Morphi/releases">Releases</a> page)
 
-<p>
-  To launch Morphi from Terminal using the <code>morphi</code> command,
-  install the command-line launcher:
-</p>
+[//]: # (  and move it to the <code>Applications</code> folder.)
 
-<pre><code>sudo mkdir -p /usr/local/bin
+[//]: # (</p>)
 
-sudo tee /usr/local/bin/morphi &gt; /dev/null &lt;&lt;'EOF'
-#!/bin/sh
-open "/Applications/Morphi.app"
-EOF
+[//]: # ()
+[//]: # (<p>)
 
-sudo chmod +x /usr/local/bin/morphi</code></pre>
+[//]: # (  Morphi can then be launched directly from the Applications folder.)
 
-<p>
-  Morphi can then be launched from any directory:
-</p>
+[//]: # (</p>)
 
-<pre><code>morphi</code></pre>
+[//]: # ()
+[//]: # (<h4>Optional: Terminal launcher</h4>)
 
-<h2>Usage</h2>
+[//]: # ()
+[//]: # (<p>)
 
-<p>
-  Launch Morphi from the Applications folder or from Terminal:
-</p>
+[//]: # (  To launch Morphi from Terminal using the <code>morphi</code> command,)
 
-<pre><code>morphi</code></pre>
+[//]: # (  install the command-line launcher:)
 
-<p>
-  For detailed usage instructions, see the
-  <a href="https://xxx.github.io/Morphi/">Documentation</a>.
-</p>
+[//]: # (</p>)
+
+[//]: # ()
+[//]: # (<pre><code>sudo mkdir -p /usr/local/bin)
+
+[//]: # ()
+[//]: # (sudo tee /usr/local/bin/morphi &gt; /dev/null &lt;&lt;'EOF')
+
+[//]: # (#!/bin/sh)
+
+[//]: # (open "/Applications/Morphi.app")
+
+[//]: # (EOF)
+
+[//]: # ()
+[//]: # (sudo chmod +x /usr/local/bin/morphi</code></pre>)
+
+[//]: # ()
+[//]: # (<p>)
+
+[//]: # (  Morphi can then be launched from any directory:)
+
+[//]: # (</p>)
+
+[//]: # ()
+[//]: # (<pre><code>morphi</code></pre>)
 
 
 
@@ -133,6 +144,27 @@ source .venv/bin/activate</code></pre>
 <p>Run Morphi:</p>
 
 <pre><code>python morphi/main.py</code></pre>
+
+
+
+<h2>Usage</h2>
+
+[//]: # (<p>)
+
+[//]: # (  Launch Morphi from the Applications folder or from Terminal:)
+
+[//]: # (</p>)
+
+[//]: # ()
+[//]: # (<pre><code>morphi</code></pre>)
+
+<p>
+  For detailed usage instructions, see the
+  <a href="https://xxx.github.io/Morphi/">Documentation</a>.
+</p>
+
+
+
 
 
 <h2>Model weight</h2>
