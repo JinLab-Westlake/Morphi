@@ -19,15 +19,10 @@ AI-powered organoid analysis platform integrating:
 [Datasets](链接) |
 [Paper](链接)
 
-<br clear="right"/>
 
 
 
-<h2>Overview</h2>
-
-<p>
-1. 
-</p>
+<h2>Interface</h2>
 
 <p align="left">
   <img src="docs/images/morphi_interface.png" width="500">
@@ -96,7 +91,7 @@ sudo chmod +x /usr/local/bin/morphi</code></pre>
 
 <p>
   Download the latest <code>Morphi.app</code> from the
-  <a href="../../releases">Releases</a> page.
+  <a href="https://github.com/JinLab-Westlake/Morphi/releases">Releases</a> page.
 </p>
 
 <p>
@@ -123,7 +118,7 @@ sudo chmod +x /usr/local/bin/morphi</code></pre>
 
 <p>Clone the repository:</p>
 
-<pre><code>git clone &lt;repository-url&gt;
+<pre><code>git clone https://github.com/JinLab-Westlake/Morphi.git
 cd Morphi</code></pre>
 
 <p>Create and activate a virtual environment:</p>
@@ -139,27 +134,30 @@ source .venv/bin/activate</code></pre>
 
 <pre><code>python morphi/main.py</code></pre>
 
-<hr>
 
-<h2>Usage</h2>
-
-<h3>Launch Morphi</h3>
-
-<p>
-  After installation, Morphi can be launched directly from Terminal:
+<h2>Model weight</h2>
+<p>The
+  <a href="https://github.com/JinLab-Westlake/Morphi-models" target="_blank">
+    DoANet
+  </a> and
+  <a href="https://github.com/JinLab-Westlake/Morphi-models" target="_blank">
+    Instance-Segmentation
+  </a>model export are based on ONNX format.
 </p>
 
-<pre><code>morphi</code></pre>
+<p>
+  The trained model weights are available for download from
+  <a href="YOUR_URL" target="_blank">Morphi-weight</a>.
+</p>
 
 <p>
-  For detailed instructions on using Morphi, please refer to the
-  <a href="https://xxx.github.io/Morphi/">Documentation</a>.
+  Model training code can be found on
+  <a href="https://github.com/JinLab-Westlake/Morphi-models" target="_blank">
+    Morphi-models
+  </a>.
 </p>
 
 
-<h2>Datasets</h2>
-
-Data availability
 
 <h2>Citation</h2>
 
