@@ -18,7 +18,7 @@ from UI.Information_win.info_win import InfoWindow
 import glob, tempfile
 from Label_tool.brush_editor import InstanceBrushEditor
 from Fluo_proccess.Canny.canny_edge_detec import EdgeClusterParams
-
+from pathlib import Path
 
 
 
@@ -194,7 +194,12 @@ class Main(QtWidgets.QMainWindow):
 
 
         # ======= style setting =======
-        with open("./UI/Style/style.qss", "r") as f:
+        # with open("./UI/Style/style.qss", "r") as f:
+        #     self.setStyleSheet(f.read())
+        UI_DIR = Path(__file__).resolve().parent
+        STYLE_PATH = UI_DIR / "Style" / "style.qss"
+
+        with open(STYLE_PATH, "r", encoding="utf-8") as f:
             self.setStyleSheet(f.read())
 
         self._preview_override = None
