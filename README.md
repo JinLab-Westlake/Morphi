@@ -9,7 +9,7 @@
   alt="Multi-dimensional organoid phenotype analysis software"
 />
 
-AI-powered organoid analysis platform integrating:
+AI-powered organoid analysis software integrating:
 1. z-stack projection
 2. fluorescence quantification
 3. instance segmentation
