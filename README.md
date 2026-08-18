@@ -5,11 +5,13 @@
   alt="Multi-dimensional organoid phenotype analysis platform"
 />
 
-### Multi-dimensional organoid phenotype analysis platform
+## Morphi
 
-AI-powered organoid analysis platform integrating
-z-stack projection, fluorescence quantification,
-instance segmentation, and viability assessment.
+AI-powered organoid analysis platform integrating:
+1. z-stack projection
+2. fluorescence quantification
+3. instance segmentation
+4. organoid viability assessment
 
 [Documentation](链接) |
 [Datasets](链接) |
@@ -21,12 +23,20 @@ instance segmentation, and viability assessment.
 
 ## Overview
 
+<p>
+1. 
+</p>
+
+<p align="left">
+  <img src="docs/images/morphi_interface.png" width="500">
+</p>
+
 
 ## Installation
 
 安装方法。
 
-## Quick Start
+## Usage
 
 最简运行示例。
 
