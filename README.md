@@ -24,8 +24,8 @@ AI-powered organoid analysis platform integrating:
 
 <h2>Interface</h2>
 
-<p align="left">
-  <img src="docs/images/morphi_interface.png" width="500">
+<p align="center">
+  <img src="docs/images/morphi_interface.png" width="600">
 </p>
 
 
