@@ -132,10 +132,24 @@ AI-powered organoid analysis platform integrating:
 <pre><code>git clone https://github.com/JinLab-Westlake/Morphi.git
 cd Morphi</code></pre>
 
-<p>Create and activate a virtual environment:</p>
+<p>Create a virtual environment:</p>
 
-<pre><code>python -m venv .venv
-source .venv/bin/activate</code></pre>
+<pre><code>python -m venv .venv</code></pre>
+
+
+<h4>For different operating systems:</h4>
+<h4>1. Linux / macOS</h4>
+
+<pre><code>source .venv/bin/activate</code></pre>
+
+<h4>2. Windows (Command Prompt / PowerShell)</h4>
+
+<pre><code># Windows - Command Prompt
+.venv\Scripts\activate
+
+# Windows - PowerShell
+.venv\Scripts\Activate.ps1</code></pre>
+
 
 <p>Install the required dependencies:</p>
 
@@ -146,20 +160,9 @@ source .venv/bin/activate</code></pre>
 <pre><code>python morphi/main.py</code></pre>
 
 
-
 <h2>Usage</h2>
-
-[//]: # (<p>)
-
-[//]: # (  Launch Morphi from the Applications folder or from Terminal:)
-
-[//]: # (</p>)
-
-[//]: # ()
-[//]: # (<pre><code>morphi</code></pre>)
-
 <p>
-  For detailed usage instructions, see the
+  For detailed usage instructions of software, see the
   <a href="https://xxx.github.io/Morphi/">Documentation</a>.
 </p>
 
