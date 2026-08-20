@@ -120,7 +120,7 @@ cd Morphi</code></pre>
 
 <p>
   The trained model weights are available for download from
-  <a href="YOUR_URL" target="_blank">Morphi-weight</a>.
+  <a href="YOUR_URL" target="_blank">Morphi-checkpoints</a>.
 </p>
 
 <p>
