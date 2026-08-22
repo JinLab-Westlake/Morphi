@@ -134,8 +134,8 @@ cd Morphi</code></pre>
 
 <h2>Citation</h2>
 
-Citation information after publication of the paper.
+
 
 <h2>License</h2>
 
-Code license
+
