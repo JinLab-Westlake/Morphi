@@ -15,7 +15,7 @@ AI-powered organoid analysis software integrating:
 3. instance segmentation
 4. organoid viability assessment
 
-[Documentation](https://xxx.github.io/Morphi/) |
+[Documentation](https://github.io/Morphi/) |
 [Datasets](链接) |
 [Paper](链接)
 
