@@ -12,7 +12,7 @@
 AI-powered organoid analysis software integrating:
 1. z-stack projection
 2. fluorescence quantification
-3. instance segmentation
+3. diverse instance segmentation
 4. organoid viability assessment
 
 [Documentation](https://github.io/Morphi/) |
