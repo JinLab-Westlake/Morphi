@@ -6,7 +6,7 @@
   src="./docs/images/Picture1.png"
   align="right"
   width="350"
-  alt="Multi-dimensional organoid phenotype analysis software"
+  alt="Multi-dimensional organoid analysis software"
 />
 
 AI-powered organoid analysis software integrating:
