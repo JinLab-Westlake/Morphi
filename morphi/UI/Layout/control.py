@@ -477,19 +477,19 @@ def _build_page_proj(main) -> QtWidgets.QWidget:
     return w
 
 
-
 def _reset_defaults(main, checked=False):
-    """恢复默认参数。注意：不要把 clicked 的 bool 当作 main。"""
-    # 根据你想要的默认值设置
-    main.spin_score.setValue(0.3)
-    main.spin_nms.setValue(0.1)
-    main.spin_min_area.setValue(0)
-    main.spin_min_side.setValue(0)
+    """恢复默认参数。"""
 
-    # 只有存在时才清理输出目录
+    main.spin_score.setValue(0.8)
+    main.spin_nms.setValue(0.005)
+    main.spin_min_area.setValue(0)
+    main.spin_top_k.setValue(100)
+
+    main.seg_min_side = 0
+
     if hasattr(main, "edit_outdir"):
         main.edit_outdir.clear()
-        _on_param_changed(main, "seg_output_dir", None)  # 同步运行态+持久化
+        _on_param_changed(main, "seg_output_dir", None)
 
 def _on_param_changed(main, key, value):
     # 回写到 Main 的运行态
