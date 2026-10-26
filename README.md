@@ -18,15 +18,7 @@ AI-powered organoid analysis software integrating:
 
 [Documentation](https://github.io/Morphi/) |
 [Datasets](链接) |
-[Paper](链接)
-
-<p align="left">
-  <img src="https://img.shields.io/badge/Python-3.10-blue" alt="Python">
-  <img src="https://img.shields.io/badge/PyTorch-2.2.2-orange" alt="PyTorch">
-  <a href="https://www.biorxiv.org/content/10.64898/2026.10.21.760628v1">
-    <img src="https://img.shields.io/badge/Preprint-bioRxiv-B31B1B" alt="bioRxiv Preprint">
-  </a>
-</p>
+[Paper](https://www.biorxiv.org/content/10.64898/2026.10.21.760628v1)
 
 
 
