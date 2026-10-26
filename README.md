@@ -135,6 +135,7 @@ cd Morphi</code></pre>
 
 <h2>Citation</h2>
 If you use Morphi in your research, please cite:
+
 ```bibtex
 @article{wang2026morphi,
   title   = {AI-driven phenotypic profiling of organoids},
