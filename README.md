@@ -134,9 +134,12 @@ cd Morphi</code></pre>
 
 
 <h2>Citation</h2>
-
-
-
-<h2>License</h2>
-
-
+If you use Morphi in your research, please cite:
+```bibtex
+@article{wang2026morphi,
+  title   = {AI-driven phenotypic profiling of organoids},
+  author  = {Yimin, Wang and Yuting, Sun and Xin, Jin},
+  journal = {bioRxiv},
+  year    = {2026},
+  doi     = {10.64898/2026.10.21.760628}
+}
