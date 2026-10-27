@@ -748,7 +748,7 @@ class Main(QtWidgets.QMainWindow):
                         full = cv2.resize(m.astype(np.float32), (disp_W, disp_H),
                                           interpolation=cv2.INTER_NEAREST)
 
-                # === 统一阈值二值化（只在这里做一次）===
+                # === 统一阈值二值化 ===
                 full_bin = (full > mask_thr).astype(np.uint8) * 255
                 canvas_list.append(full_bin)
 
@@ -917,7 +917,7 @@ class Main(QtWidgets.QMainWindow):
         import cv2
 
         if self.last_pred is None or self.last_mode != "seg":
-            raise RuntimeError("当前没有可导出的分割/检测结果（请先运行 Seg）。")
+            raise RuntimeError("There are currently no segmentation/detection results to export (please run Seg first).")
 
         H, W = (self.last_img.shape[0], self.last_img.shape[1]) if self.last_img is not None else (None, None)
         boxes = self.last_pred.get("boxes", None)
@@ -985,7 +985,7 @@ class Main(QtWidgets.QMainWindow):
         boxes = self.last_pred.get("boxes", None)
         classes = self.last_pred.get("classes", None)
         if masks is None:
-            QtWidgets.QMessageBox.information(self, "Export Mask (PNG)", "当前结果没有 mask。")
+            QtWidgets.QMessageBox.information(self, "Export Mask (PNG)", "The current result has no mask.")
             return
 
         out_dir = QtWidgets.QFileDialog.getExistingDirectory(self, "Select output directory")
@@ -1032,7 +1032,7 @@ class Main(QtWidgets.QMainWindow):
 
         cv2.imwrite(os.path.join(out_dir, "merged_mask.png"), merged)
         self.append_log(f"[Export] {N} mask PNG saved to: {out_dir}")
-        QtWidgets.QMessageBox.information(self, "Export Mask (PNG)", f"已导出 {N} 个实例 PNG 到：\n{out_dir}")
+        QtWidgets.QMessageBox.information(self, "Export Mask (PNG)", f"Exported {N} instances PNG to: \n{out_dir}")
 
     def _save_masks_json_only(self):
         """
@@ -1043,14 +1043,14 @@ class Main(QtWidgets.QMainWindow):
         import os, json, cv2, numpy as np
 
         if self.last_pred is None or self.last_mode != "seg":
-            QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", "请先运行 Seg。")
+            QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", "Please run Seg first.")
             return
 
         masks = self.last_pred.get("masks", None)
         boxes = self.last_pred.get("boxes", None)
         classes = self.last_pred.get("classes", None)
         if masks is None:
-            QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", "当前结果没有 mask。")
+            QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", "The current result has no mask.")
             return
 
         out_dir = QtWidgets.QFileDialog.getExistingDirectory(self, "Select output directory")
@@ -1237,8 +1237,6 @@ class Main(QtWidgets.QMainWindow):
         input_path = temp_in
         self._ec_ctx["temp_input"] = temp_in
 
-
-        # params = EdgeClusterParams()
 
         # 临时目录（仅用于预览，预览后清理）
         import tempfile as _tf
@@ -1687,23 +1685,6 @@ class Main(QtWidgets.QMainWindow):
 
 
 
-
-    # # 色阶预览
-    # def _apply_levels_to_preview(self, b, gamma, w):
-    #     if self.last_img is None:
-    #         return
-    #     img = self.last_img.astype(np.float32)
-    #     x = np.clip((img - b) / max(1.0, (w - b)), 0.0, 1.0)
-    #     x = np.power(x, 1.0 / max(0.05, float(gamma)))
-    #     out = (x * 255.0).clip(0, 255).astype(np.uint8)
-    #     self._set_preview_override(out)
-    #
-    # # 亮度/对比度等预览
-    # def _on_image_adjust(self, *_):
-    #     if self.last_img is None:
-    #         return
-    #     adj = self._build_adjusted(self.last_img)
-    #     self._set_preview_override(adj)
 
     # --- 显示display图的色阶bar图
     # Main 类中添加：
