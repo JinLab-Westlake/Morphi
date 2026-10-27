@@ -4,12 +4,12 @@ import numpy as np
 
 class HistogramLevelsWidget(QtWidgets.QWidget):
     """
-    直方图 + 三手柄（黑、γ、白），范围 0..255。
-    公共API：
-      - set_histogram(hist) / set_hist(hist)
-      - set_levels(black, gamma, white, emit_signal=True)
-      - levels() -> (b, g, w)
-      - 信号：levelsChanged(int black, float gamma, int white)
+    Histogram + three handles (black, γ, white), range 0.. 255.
+    Public API:
+        - set_histogram(hist) / set_hist(hist)
+        - set_levels(black, gamma, white, emit_signal=True)
+        - levels() -> (b, g, w)
+        - Signal: levelsChanged(int black, float gamma, int white)
     """
     levelsChanged = QtCore.pyqtSignal(int, float, int)
 
@@ -19,26 +19,26 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.FocusPolicy.StrongFocus)
 
-        # ==== 数据 ====
+        # ==== data ====
         self._hist = np.zeros(256, dtype=np.float32)
         self._hist_norm = None
 
-        # ==== 等级参数 ====
+        # ==== Rank parameter ====
         self._b = 0
         self._w = 255
         self._g = 1.0
 
-        # ==== 交互状态 ====
+        # ==== State of interaction ====
         self._drag = None            # "b" | "w" | "g" | None
         self._handle_radius = 12
 
-        # ==== 绘制边距（统一）====
+        # ==== Draw margins (uniform) ====
         self._pad_left = 12
         self._pad_right = 12
         self._pad_top = 8
-        self._pad_bottom = 40   # 给底部手柄/文字留足空间
+        self._pad_bottom = 40   # Leave plenty of room for the bottom handle/text
 
-        # 命中区域缓存
+        # Hit region cache
         self._hit_b = QtCore.QRect()
         self._hit_w = QtCore.QRect()
         self._hit_g = QtCore.QRect()
@@ -46,10 +46,10 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         self._pending_update = False
         self._debounce = QtCore.QTimer(self)
         self._debounce.setSingleShot(True)
-        self._debounce.setInterval(16)  # ~60 FPS；想更稳可设 33
+        self._debounce.setInterval(16)  # ~60 FPS
         self._debounce.timeout.connect(self._flush_update)
 
-        # 减少背景擦除抖动
+        # Reduces background erasure jitter
         self.setAttribute(QtCore.Qt.WidgetAttribute.WA_OpaquePaintEvent, True)
         self.setAutoFillBackground(False)
 
@@ -64,7 +64,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         self._pending_update = False
         self.update()
 
-    # ---------- 工具：统一的绘图区域 ----------
+    # Tools
     def _plot_rect(self) -> QtCore.QRect:
         r = self.rect()
         return r.adjusted(self._pad_left, self._pad_top, -self._pad_right, -self._pad_bottom)
@@ -82,7 +82,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
             h = np.asarray(hist, dtype=np.float32)
             h = np.maximum(h, 0)
             m = float(h.max())
-            # 避免每帧做除法：保存归一化结果
+            # Avoid per-frame division: Save the normalized result
             self._hist = h
             self._hist_norm = (h / m) if m > 0 else h
         self._schedule_update()
@@ -100,12 +100,12 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
             h = np.asarray(hist, dtype=np.float32)
             h = np.maximum(h, 0)
             m = float(h.max())
-            # 避免每帧做除法：保存归一化结果
+            # Avoid per-frame division: Save the normalized result
             self._hist = h
             self._hist_norm = (h / m) if m > 0 else h
         self._schedule_update()
 
-    # 兼容旧调用
+    # Compatible with old calls
     def set_hist(self, hist: Optional[np.ndarray]):
         self.set_histogram(hist)
 
@@ -124,7 +124,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
     def levels(self):
         return self._b, self._g, self._w
 
-    # ---------- 绘制 ----------
+    # ---------- draw ----------
     def paintEvent(self, e: QtGui.QPaintEvent):
         p = QtGui.QPainter(self)
         p.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing, True)
@@ -132,14 +132,14 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         full = self.rect()
         plot = self._plot_rect()
 
-        # 背景
+        # background
         p.fillRect(full, QtGui.QColor("#1e1f22"))
 
-        # plot边框
+        # plot border
         p.setPen(QtGui.QPen(QtGui.QColor(230, 230, 230, 200), 1))
         p.drawRect(plot)
 
-        # 直方图
+        # histogram
         if self._hist_norm is not None and plot.width() > 0:
             poly = QtGui.QPolygonF()
             left, top = plot.left(), plot.top()
@@ -156,13 +156,13 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
             p.setPen(QtGui.QPen(QtGui.QColor(76, 139, 245, 220), 2))
             p.drawPolygon(poly)
 
-            # —— 彩色条（Jet风格）——
+            # —— color bar (Jet style)——
             ramp_h = 12
             ramp_rect = QtCore.QRect(plot.left(), plot.bottom() + 4, plot.width(), ramp_h)
             if ramp_rect.width() > 0:
                 grad = QtGui.QLinearGradient(ramp_rect.left(), ramp_rect.center().y(),
                                              ramp_rect.right(), ramp_rect.center().y())
-                # Jet-ish 颜色节点：蓝→青→黄→红
+                # Jet-ish color nodes: blue → cyan → yellow → red
                 grad.setColorAt(0.00, QtGui.QColor(0, 0, 131))
                 grad.setColorAt(0.25, QtGui.QColor(0, 60, 255))
                 grad.setColorAt(0.50, QtGui.QColor(170, 255, 195))
@@ -170,7 +170,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
                 grad.setColorAt(1.00, QtGui.QColor(128, 0, 0))
                 p.fillRect(ramp_rect, QtGui.QBrush(grad))
 
-        # 手柄位置换算
+        # Handle position conversion
         def x_from_value(v):
             return plot.left() + (v / 255.0) * max(1, plot.width())
 
@@ -178,7 +178,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         xw = int(x_from_value(self._w))
         xg = int(x_from_value(self._gamma_to_x()))
 
-        # 三角手柄（黑、白）
+        # Triangular handle (black, white)
         tri_w, tri_h = 10, 8
         y_tri = plot.bottom() + 12
 
@@ -195,7 +195,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         draw_triangle(xb, QtGui.QColor("#cfd2d8"))
         draw_triangle(xw, QtGui.QColor("#cfd2d8"))
 
-        # γ 水滴
+        # γ drop
         drop_r = 9.0
         drop_c = QtCore.QPointF(float(xg), float(plot.bottom() + 10))
         path = QtGui.QPainterPath()
@@ -204,12 +204,12 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         p.setPen(QtGui.QPen(QtGui.QColor(30, 30, 30), 1))
         p.drawPath(path)
 
-        # 命中区域
+        # Area of hit
         self._hit_b = QtCore.QRect(int(xb) - 14, int(y_tri) - 14, 28, 18)
         self._hit_w = QtCore.QRect(int(xw) - 14, int(y_tri) - 14, 28, 18)
         self._hit_g = QtCore.QRect(int(drop_c.x()) - 16, int(drop_c.y()) - 16, 32, 32)
 
-        # 文本
+        # text
         info = f"B:{self._b}  G:{self._g:.2f}  W:{self._w}"
         p.setPen(QtGui.QColor(220, 220, 220))
         p.drawText(full.adjusted(8, full.height() - 22, -8, -4),
@@ -271,10 +271,10 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
         d.sort()
         return d[0][1]
 
-    # ---------- γ 映射 ----------
+    # ---------- γ map ----------
     def _gamma_to_x(self):
         g = float(self._g)
-        rel = g**0.5 / (g**0.5 + 1.0)  # 单调映射，rel≈0.5时γ≈1
+        rel = g**0.5 / (g**0.5 + 1.0)  # Monotone mapping, rel≈0.5时γ≈1
         x = int(round(self._b + rel * (self._w - self._b)))
         return max(0, min(255, x))
 
@@ -294,7 +294,7 @@ class HistogramLevelsWidget(QtWidgets.QWidget):
 #     w.resize(400, 150)
 #     w.show()
 #
-#     # 测试用的随机直方图（让蓝色区域有高度）
+#     # Random histogram for testing
 #     w.set_histogram(np.random.randint(0, 100, 256))
 #
 #     sys.exit(app.exec())

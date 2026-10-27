@@ -2,8 +2,8 @@ from PyQt6 import QtWidgets, QtGui, QtCore
 
 class LabelEditorDialog(QtWidgets.QDialog):
     """
-    简单表格：id / score / label_id(/name)
-    - label 列可编辑（QLineEdit）；如果你有固定类名列表，也可以改成 QComboBox。
+    Simple table: id/score/label_id(/name)
+    - label column editable (QLineEdit); If you have a fixed list of class names, you can also change it to QComboBox.
     """
     def __init__(self, parent, boxes, scores, classes, id2name=None):
         super().__init__(parent)
@@ -40,7 +40,7 @@ class LabelEditorDialog(QtWidgets.QDialog):
             if id2name:
                 nm = id2name.get(lb, "")
                 it_nm = QtWidgets.QTableWidgetItem(str(nm))
-                # 名称列也可编辑
+                # The name column is also editable
                 table.setItem(i, 3, it_nm)
 
         btn_ok = QtWidgets.QPushButton("OK")
@@ -61,7 +61,7 @@ class LabelEditorDialog(QtWidgets.QDialog):
 
     def get_labels(self):
         """
-        返回（新的 classes 列，和可选的名称映射）
+        Return: new classes column, and optional name mapping
         """
         n = self._table.rowCount()
         new_ids = []

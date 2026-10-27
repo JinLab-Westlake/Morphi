@@ -54,12 +54,12 @@ def promote_all_nms_thresholds_to_inputs(m, iou_name='NMS_iou_thr', score_name='
     rewired_iou=rewired_sc=0
     for n in g.node:
         if n.op_type!='NonMaxSuppression': continue
-        # iou_thr 在 input[3]
+        # iou_thr in input[3]
         if len(n.input)>=4 and n.input[3]:
             st,_,_=find_scalar_source(m, n.input[3], out2node, init)
             if st in ('initializer','constant'):
                 n.input[3]=iou_name; rewired_iou+=1
-        # score_thr 在 input[4]
+        # score_thr in input[4]
         if len(n.input)>=5 and n.input[4]:
             st,_,_=find_scalar_source(m, n.input[4], out2node, init)
             if st in ('initializer','constant'):
@@ -72,6 +72,5 @@ if __name__=='__main__':
     onnx_out = 'model_runtime_k.onnx'
     m = load(onnx_in)
     m = promote_all_topk_k_to_input(m, input_name='TopK_k')
-    # m = promote_all_nms_thresholds_to_inputs(m, iou_name='NMS_iou_thr', score_name='NMS_score_thr')
     save(m, onnx_out)
     print('saved ->', onnx_out)

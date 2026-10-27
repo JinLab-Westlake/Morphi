@@ -19,7 +19,7 @@ def resize_shortest_edge(img_bgr, min_size=800, max_size=1333):
 
 class Segmentor:
     """
-    支持运行时向图内可调节点喂参数（若模型存在以下输入）：
+    Supports runtime parameter feeding to adjustable points in the graph:
       - max_output_boxes_per_class (int64 [1])
       - iou_threshold               (float32 [1])
       - score_threshold             (float32 [1])
@@ -31,10 +31,10 @@ class Segmentor:
         self.outputs = self.session.get_outputs()
         self.output_names = [o.name for o in self.outputs]
 
-        # 记录所有输入名
+        # Keep track of all the input names
         self.input_names  = [i.name for i in self.inputs]
 
-        # 选择图像输入名（优先 4D、常见命名）
+        # Select image input name
         self.input_name, self.input_shape, self.input_rank = None, None, None
         for i in self.inputs:
             shp = i.shape
@@ -44,12 +44,12 @@ class Segmentor:
                 self.input_rank  = len(shp)
                 break
         if self.input_name is None:
-            # 兜底使用第一个输入
+            # The bottom of the pocket uses the first input
             self.input_name  = self.inputs[0].name
             self.input_shape = self.inputs[0].shape
             self.input_rank  = len(self.input_shape)
 
-        # 固定尺寸与缩放策略
+        # Fixed size and scaling strategy
         if self.input_rank == 3:
             _, H, W = self.input_shape
         elif self.input_rank == 4:
@@ -60,7 +60,7 @@ class Segmentor:
         self.use_short_edge_resize = use_short_edge_resize
         self.min_size, self.max_size = min_size, max_size
 
-        # —— 查找可调节点输入名（按常见尾缀/别名匹配，存在才启用）——
+        # —— Find the adjustable point input name ——
         def _find_by_suffix(*suffixes):
             for name in self.input_names:
                 for suf in suffixes:
@@ -73,7 +73,7 @@ class Segmentor:
         self.nms_score_name = _find_by_suffix("score_threshold", "nms_score_threshold")
         self.topk_k_name    = _find_by_suffix("TopK_k", "topk_k", "k")
 
-        # 运行时参数（None 表示不覆盖）
+        # Runtime parameters
         self.runtime_params = {
             "max_output_boxes_per_class": None,  # int
             "iou_threshold": None,               # float
@@ -81,7 +81,7 @@ class Segmentor:
             "TopK_k": None,                      # int
         }
 
-    # 对外接口：从 UI/业务层设置
+    # External interface: Set from UI/ business layer
     def set_runtime_params(self, *, max_dets=None, iou_thr=None, score_thr=None, topk_k=None):
         if max_dets is not None:
             self.runtime_params["max_output_boxes_per_class"] = int(max_dets)
@@ -92,7 +92,7 @@ class Segmentor:
         if topk_k is not None:
             self.runtime_params["TopK_k"] = int(topk_k)
 
-    # 调试用：看看模型里到底有哪些输入
+    # Debugging: To see what inputs are in the model
     def list_input_names(self):
         return self.input_names
 
@@ -146,7 +146,7 @@ class Segmentor:
         if self.input_rank == 4:
             x = x[None, ...]
 
-        # —— 构造 feeds ——
+        # —— Constructing feeds ——
         feeds = { self.input_name: x }
         rp = self.runtime_params
 
@@ -178,7 +178,7 @@ def iou_xyxy(a, b):
 def nms_keep_indices(boxes, scores, iou_thr=0.5):
     if boxes is None or len(boxes) == 0:
         return []
-    order = np.argsort(-scores)  # 高分优先
+    order = np.argsort(-scores)  # Higher score preferred
     keep = []
     while len(order) > 0:
         i = order[0]
@@ -199,15 +199,15 @@ def filter_by_min(boxes, min_area=0, min_side=0):
     return area_mask & side_mask
 
 def _color_bgr(i):
-    # Set1 是高饱和度分类色系
+    # Set1 is a high saturation classification color system
     rgb = cm.get_cmap("Set1")(i % 9)[:3]
-    return (int(rgb[2]*255), int(rgb[1]*255), int(rgb[0]*255))  # 转成 BGR
+    return (int(rgb[2]*255), int(rgb[1]*255), int(rgb[0]*255))  # transfer to BGR
 
 
 
 def draw_overlay(
-    img_bgr,                   # 在这张图上渲染（原图）
-    frame_ref,                 # 可为 None；若非 None 表示模型frame的参考尺寸
+    img_bgr,                   # original image
+    frame_ref,                 # Can be None
     boxes=None,
     scores=None,
     classes=None,
@@ -215,26 +215,26 @@ def draw_overlay(
     score_thr: float = 0.0,
     alpha: float = 0.4,
     draw_box: bool = False,
-    coords: str = "orig",      # "orig" 表示 boxes/masks 已是原图坐标；"frame" 表示在 frame 坐标
+    coords: str = "orig",      # "orig" indicates that boxes/masks are in the original image coordinates."
 ):
     """
-    渲染叠加层到 img_bgr 上：
-      - 若 coords="orig"：认为 boxes/masks 已在 img_bgr 的坐标系（推荐）
-      - 若 coords="frame"：会按 frame_ref→img_bgr 比例缩放到原图再画
-      - frame_ref 可为 None；此时若 coords="frame" 则回退为与 img_bgr 同尺寸处理
+    Render the overlay on img_bgr:
+        - if coords="orig" : boxes/masks are considered to be in the img_bgr coordinate system (recommended)
+        - If coords="frame" : It will be scaled to the original image by frame_ref→img_bgr
+        - frame_ref may be None; In this case, coords="frame" falls back to the same size as img_bgr
     """
     if img_bgr is None:
         raise ValueError("img_bgr must not be None")
     canvas = img_bgr.copy()
     Hc, Wc = canvas.shape[:2]
 
-    # 参考尺寸
+    # Size of reference
     if frame_ref is None:
         Hf, Wf = Hc, Wc
     else:
         Hf, Wf = frame_ref.shape[:2]
 
-    # 过滤阈值
+    # Filtering threshold
     keep_idx = None
     if scores is not None and len(scores) > 0 and score_thr > 0:
         keep_idx = np.where(np.asarray(scores) >= float(score_thr))[0]
@@ -250,7 +250,7 @@ def draw_overlay(
         classes = kpick(classes)
         masks   = kpick(masks)
 
-    # === 统一 boxes 到原图坐标 ===
+    # === Unify boxes to original coordinates ===
     if boxes is not None:
         boxes = np.asarray(boxes).astype(np.float32)
         if coords == "frame" and (Hf != Hc or Wf != Wc):
@@ -259,7 +259,7 @@ def draw_overlay(
             boxes[:, [0, 2]] *= sx
             boxes[:, [1, 3]] *= sy
 
-    # === 仅在实例 mask 上着色 ===
+    # === Color only on the instance mask ===
     if masks is not None:
         overlay = canvas.copy()
         color_pool = [
@@ -270,20 +270,22 @@ def draw_overlay(
         N = len(masks) if isinstance(masks, list) else (
             masks.shape[0] if hasattr(masks, "shape") and masks.ndim >= 3 else 1)
         for i in range(N):
-            # 取出当前实例的mask -> squeeze成2D
+            # Extract mask -> squeeze the current instance into 2D
             m = masks[i] if N > 1 else masks
             m = np.asarray(m).squeeze()
 
-            # 二值化（浮点/概率 -> 阈值；非零即真）
+            # Binarization
             if m.dtype != np.uint8:
                 m = (m > 0.5).astype(np.uint8)
             else:
                 m = (m > 0).astype(np.uint8)
 
-            # 目标：构造一张与 overlay 同尺寸的 full 二值图，只在真实 mask 像素为1
+            # Goal: Construct a full binary image of the same size as the overlay,
+            # with only 1 pixels in the real mask
             full = np.zeros((Hc, Wc), dtype=np.uint8)
 
-            # 如果有 bbox，并且 m 看起来是裁剪到 bbox 尺寸的小ROI，就贴回到全图
+            # If there is a bbox and m appears to be a small ROI cropped to the bbox size,
+            # paste back to the full image
             if boxes is not None and i < len(boxes):
                 x1, y1, x2, y2 = [int(round(v)) for v in boxes[i]]
                 x1 = max(0, min(Wc - 1, x1));
@@ -293,24 +295,24 @@ def draw_overlay(
                 bw, bh = max(0, x2 - x1), max(0, y2 - y1)
 
                 if bw > 0 and bh > 0:
-                    # 情况A：mask本来就是整图大小 -> 直接用整图（严格只按mask像素上色）
+                    # ask is the whole graph size -> just use the whole graph
                     if m.shape[:2] == (Hc, Wc):
                         full = m.astype(np.uint8)
                     else:
-                        # 情况B：mask是ROI（bh,bw）或其它尺寸 -> 先resize到(bw,bh)，再贴回bbox
+                        # mask is ROI (bh,bw) or other size -> resize to (bw,bh) and paste back to bbox
                         m_roi = m
                         if m_roi.shape[:2] != (bh, bw):
                             m_roi = cv2.resize(m_roi.astype(np.uint8), (bw, bh), interpolation=cv2.INTER_NEAREST)
                         full[y1:y2, x1:x2] = (m_roi > 0).astype(np.uint8)
 
             else:
-                # 无 bbox 的情况：若mask已是整图，直接用；否则直接把mask整体resize到整图
+                # The case of no bbox
                 if m.shape[:2] == (Hc, Wc):
                     full = m.astype(np.uint8)
                 else:
                     full = cv2.resize(m.astype(np.uint8), (Wc, Hc), interpolation=cv2.INTER_NEAREST)
 
-            # 只对 full==1 的像素做 alpha 混合着色
+            # alpha blending is applied only to pixels with full==1
             if np.any(full):
                 color = color_pool[
                     (int(classes[i]) if classes is not None and i < len(classes) else i) % len(color_pool)]
@@ -320,7 +322,7 @@ def draw_overlay(
                         + np.array(color, dtype=np.float32) * alpha
                 ).astype(np.uint8)
 
-                # 可选：画 mask 轮廓（不是 bbox）
+                # Draw mask outline (not bbox)
                 cnts, _ = cv2.findContours(full, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 if cnts:
                     cv2.drawContours(overlay, cnts, -1, color, 2)

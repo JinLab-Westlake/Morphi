@@ -4,7 +4,7 @@ from UI.Component.ui_widgets import HistogramLevelsWidget
 from UI.Helpers.toggle_exclusive import TwoCheckExclusive
 
 
-# 导航枚举
+# Navigation enumeration
 PAGE_HOME, PAGE_SEG, PAGE_SURV, PAGE_EDGE, PAGE_PROJ = range(5)
 
 

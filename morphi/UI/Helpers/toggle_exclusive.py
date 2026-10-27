@@ -3,8 +3,8 @@ from PyQt6 import QtWidgets
 
 class TwoCheckExclusive:
     """
-    两个 QCheckBox 互斥：勾选一个会自动取消另一个；不做禁用/置灰。
-    可选回调 on_edit_toggled/on_brush_toggled 处理业务。
+    Two QCheckboxes are mutually exclusive: checking one automatically cancels the other. Do not disable/put ash.
+    The optional callback on_edit_toggled/on_brush_toggled handles the business.
     """
     def __init__(self,
                  edit_cb: QtWidgets.QCheckBox,
@@ -55,7 +55,8 @@ class TwoCheckExclusive:
 
     def init_state(self):
         """
-        初始化一次：若两者都勾，保留 edit，取消 brush；若都未勾，不做处理。
+        Initialize once: If both are checked, leave edit, unbrush;
+        If not, do not do processing.
         """
         if self.edit_cb.isChecked() and self.brush_cb.isChecked():
             self._set_checked(self.brush_cb, False)

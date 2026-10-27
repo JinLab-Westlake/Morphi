@@ -12,12 +12,12 @@ def _to_np(a):
             a = np.asarray(a, dtype=object)
     else:
         a = np.asarray(a)
-    # 若是 object（罕见情况），尽量 stack
+    # If it's an object, stack as much as possible
     if a.dtype == object:
         try:
             a = np.stack(list(a))
         except Exception:
-            # 尝试转 float 列表
+            # Try flipping float lists
             try:
                 a = np.array([float(x) for x in a], dtype=np.float32)
             except Exception:
@@ -26,14 +26,14 @@ def _to_np(a):
 
 
 
-# squeeze 最后一维为1的情况（只对 scores/classes）
+# squeeze when the last dimension is 1 (for scores/classes only)
 def _squeeze_last1(a):
     if a is None: return None
     while a.ndim >= 1 and a.shape[-1] == 1:
         a = np.squeeze(a, axis=-1)
     return a
 
-# 对齐 N
+# Align N
 def _len(a):
     return a.shape[0] if (a is not None and hasattr(a, "shape") and a.ndim >= 1) else None
 
@@ -42,12 +42,12 @@ def _len(a):
 
 def _normalize_det_tensors(boxes, scores, classes, masks):
     """
-    统一 boxes/scores/classes/masks 的形状：
-      - scores 最终为 (N,)
-      - 若 scores 为 (N,C)，使用 classes 取对应列，否则取 argmax，并同步 classes
-      - squeeze 掉末尾的 size=1 维度
-      - classes -> int64, shape (N,)
-    返回：boxes, scores, classes, masks
+    The shape of the unified boxes/scores/classes/masks:
+        - scores result in (N,).
+        - If scores are (N,C), use classes to take the corresponding column, otherwise take argmax, and synchronize classes
+        - squeeze out the size=1 dimension at the end
+        - classes -> int64, shape (N,)
+    Returns: boxes, scores, classes, masks
     """
 
     boxes  = _to_np(boxes)
@@ -58,7 +58,7 @@ def _normalize_det_tensors(boxes, scores, classes, masks):
     scores  = _squeeze_last1(scores)
     classes = _squeeze_last1(classes)
 
-    # 处理 (N,C) 的 scores
+    # Process the scores of (N,C)
     if scores is not None and scores.ndim == 2:
         N, C = scores.shape
         if classes is not None and classes.ndim == 1 and classes.shape[0] == N:
@@ -68,12 +68,12 @@ def _normalize_det_tensors(boxes, scores, classes, masks):
             classes = np.argmax(scores, axis=1).astype(np.int64)
             scores  = np.max(scores, axis=1)
 
-    # 若 scores 依然有多维（例如 (N,H,W) 这类不合理输出），退化为每实例最大值
+    # If scores still have multiple dimensions, they degrade to the maximum value per instance
     if scores is not None and scores.ndim > 1:
         N = scores.shape[0]
         scores = scores.reshape(N, -1).max(axis=1)
 
-    # classes 类型/形状
+    # classes type/shape
     if classes is not None:
         classes = classes.astype(np.int64).reshape(-1)
 

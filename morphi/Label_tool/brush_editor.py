@@ -10,33 +10,33 @@ from Segmentation.seg_infer import draw_overlay
 
 class InstanceBrushEditor(QtCore.QObject):
     """
-    让所有实例都可“涂/擦”的画笔编辑器：
-      - enable()/disable() 开关
-      - 左键涂抹（把像素加入命中实例，并从其它实例里清掉同区域，保证互斥）
-      - 右键擦除（从命中实例移除像素）
-      - 未命中实例时左键起笔自动新建实例
-      - '[' / ']' 调整半径；E 切换涂/擦
+    A brush editor that makes all instances "paint/erase" :
+        - enable ()/disable() switch
+        - Left-click smudge (adds pixels to the hit instance and removes the same area from other instances, ensuring mutual exclusion)
+        - Right click erase (remove pixels from hit instance)
+        - When an instance is missed, left click and start to automatically create an instance
+        - '['/']' adjusts the radius; E Switch paint/wipe
     """
 
     def __init__(self, main, draw_overlay_func, *, coords_mode: str = "orig"):
         """
         :param main:
             - last_img: np.ndarray (H,W,3) BGR
-            - last_pred: dict or None. 需包含 "masks"(N,H,W或ROI)、"boxes"(N,4)、"scores"、"classes"
-            - last_mode: str, 需为 "seg" 才可编辑
-            - image_label: 有 _map_widget_to_image(posF) 方法的控件
+            -last_pred: dict or None. Contains "masks"(N,H,W or ROI), "boxes"(N,4), "scores", "classes"
+            -last_mode: str, must be "seg" to be editable
+            -image_label: Controls that have the _map_widget_to_image(posF) method
             - append_log(str), set_process_info(str), show_image(img, reset_zoom=False)
-            - _recompute_boxes_from_full_masks(masks) 方法
-            - slider_alpha(0..100) 和 seg_score_thr(阈值)
+            - _recompute_boxes_from_full_masks(masks) method
+            - slider_alpha(0.. 100) and seg_score_thr(threshold)
         :param draw_overlay_func
-        :param coords_mode: 传给 draw_overlay 的 coords 参数，通常 "orig"
+        :param coords_mode: coords parameter to pass to draw_overlay, usually "orig"
         """
         super().__init__(main)
         self.main = main
         self.draw_overlay = draw_overlay_func
         self.coords_mode = coords_mode
 
-        # 状态
+        # state
         self.enabled = False
         self._brush_radius = 8
         self._erase = False
@@ -44,10 +44,10 @@ class InstanceBrushEditor(QtCore.QObject):
         self._last_xy: Optional[Tuple[int, int]] = None
         self._edit_idx: Optional[int] = None
 
-        # 进入画笔前的 last_pred 快照，用于 Clear 撤销
+        # last_pred snapshot before entering the brush, used for Clear undo
         self._orig_pred = None
 
-        # 安装事件过滤
+        # Install event filtering
         self.main.image_label.installEventFilter(self)
 
         self._paint_dirty = False
@@ -62,12 +62,12 @@ class InstanceBrushEditor(QtCore.QObject):
         self._paint_dirty = False
         self._render_overlay_fast()
 
-    # ====== 对外接口 ======
+    # ====== External interface ======
     def enable(self):
         if self.enabled:
             return
         if not self._is_seg_ready():
-            self._log("[Brush] 请先完成一次 Seg 推理再开启画笔。")
+            self._log("[Brush] Please complete a Seg inference before starting the brush.")
             return
 
         lp = self.main.last_pred or {}
@@ -78,7 +78,7 @@ class InstanceBrushEditor(QtCore.QObject):
         self._ensure_all_masks_fullsize()  # 统一成 (N,H,W) 整图
         self.enabled = True
         self._set_cursor(True)
-        self._log("[Brush] 画笔模式 ON：左键=涂抹，右键=擦除；[ / ] 调半径；E 切换涂/擦。")
+        self._log("[Brush] Brush mode ON: Left button = smear, right button = erase; [/] tuning radius; E Switch paint/wipe.")
 
     def disable(self):
         if not self.enabled:
@@ -88,17 +88,17 @@ class InstanceBrushEditor(QtCore.QObject):
         self._last_xy = None
         self._edit_idx = None
         self._set_cursor(False)
-        self._log("[Brush] 画笔模式 OFF")
+        self._log("[Brush] Brush mode OFF")
 
     def set_radius(self, r: int):
         self._brush_radius = max(1, int(r))
-        self._log(f"[Brush] 半径={self._brush_radius}")
+        self._log(f"[Brush] radius={self._brush_radius}")
 
     def toggle_erase(self):
         self._erase = not self._erase
-        self._log("[Brush] 模式=" + ("擦除" if self._erase else "涂抹"))
+        self._log("[Brush] Pattern=" + ("erasure" if self._erase else "rub"))
 
-    # ====== 事件处理 ======
+    # ====== Event handling ======
     def eventFilter(self, obj, ev):
         if not self.enabled or obj is not self.main.image_label:
             return super().eventFilter(obj, ev)
@@ -106,7 +106,7 @@ class InstanceBrushEditor(QtCore.QObject):
         t = ev.type()
         if t == QtCore.QEvent.Type.MouseButtonPress:
             if ev.button() in (QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.RightButton):
-                if not self._is_seg_ready():  # 防抖
+                if not self._is_seg_ready():  # Anti shaking
                     return True
                 self._erase = (ev.button() == QtCore.Qt.MouseButton.RightButton)
                 self._is_down = True
@@ -144,7 +144,7 @@ class InstanceBrushEditor(QtCore.QObject):
 
         return super().eventFilter(obj, ev)
 
-    # ====== 内部：命中/编辑对象选取 ======
+    # ====== Internal: Hit/edit object selection ======
     def _pick_or_create_instance(self, xy: Tuple[int, int]):
         ix, iy = xy
         masks = self._masks()
@@ -157,9 +157,9 @@ class InstanceBrushEditor(QtCore.QObject):
             if masks[i, iy, ix] > 0:
                 hit = i; break
         if hit is None:
-            # 新建一个空实例，从空白开始“涂”
+            # Create an empty instance and "paint" from the blank
             self._create_empty_instance()
-            self._edit_idx = masks.shape[0]  # 新实例追加到末尾
+            self._edit_idx = masks.shape[0]  # The new instance is appended to the end
         else:
             self._edit_idx = int(hit)
 
@@ -188,7 +188,7 @@ class InstanceBrushEditor(QtCore.QObject):
         self._set("masks_disp", masks_new.copy())
         self._set("disp_size", (H, W))
 
-    # ====== 内部：画笔应用 ======
+    # ====== Inside: Brush application ======
     def _apply_brush(self, xy: Tuple[int, int], first_dot=False):
         if self._edit_idx is None:
             return
@@ -219,10 +219,9 @@ class InstanceBrushEditor(QtCore.QObject):
                 cv2.line(masks[self._edit_idx], (x0, y0), (ix, iy), 255, thickness=2 * r)
             self._last_xy = (ix, iy)
 
-        # # 快速预览
-        # self._set("masks_disp", masks.copy())
+        # Quick Preview
         self._set("masks_disp", masks)
-        # 不要立刻渲染
+        # Don't render right away
         self._paint_dirty = True
 
 
@@ -231,7 +230,7 @@ class InstanceBrushEditor(QtCore.QObject):
         if masks is None:
             return
 
-        # 1) 删空实例
+        # Delete the empty instance
         keep = [i for i in range(masks.shape[0]) if (masks[i] > 0).any()]
         if len(keep) != masks.shape[0]:
             masks = masks[keep]
@@ -246,54 +245,51 @@ class InstanceBrushEditor(QtCore.QObject):
                 except ValueError:
                     self._edit_idx = None
 
-        # 2) 填洞：只填当前实例 / 或全部实例
+        # Fill holes: Fill only the current instance/or all instances
         if masks.shape[0] > 0:
             if self._edit_idx is not None and 0 <= self._edit_idx < masks.shape[0]:
                 masks[self._edit_idx] = self._fill_holes_uint8(masks[self._edit_idx])
             else:
-                # 如果你想每次都全局填洞，改用这段：
-                # for i in range(masks.shape[0]):
-                #     masks[i] = self._fill_holes_uint8(masks[i])
                 pass
 
-        # 3) boxes（你不需要就清空，需要就重算）
+        # boxes
         self._set("boxes", np.zeros((masks.shape[0], 4), dtype=np.float32))
 
-        # 4) 同步显示用 masks
+        # masks
         self._set("masks", masks)
         # self._set("masks_disp", masks.copy())
         self._set("masks_disp", masks)
 
-        # 5) 重画
+        # redraw
         self._render_overlay_fast()
         n_now = masks.shape[0]
         self.main.set_process_info(f"Process Info (Seg): {n_now} objects")
 
-    # ====== 按钮槽函数 ======
+    # ====== Button slot function ======
     @QtCore.pyqtSlot()
     def on_commit_clicked(self):
-        """把当前编辑过的 mask 保存到 last_pred，并刷新 overlay。"""
+        """Save the currently edited mask to last_pred and refresh the overlay."""
         masks = self._masks()
         if masks is None or masks.size == 0:
             return
 
-        # 写回最终 masks（内部已经是 fullsize (N,H,W) )
+        # Write back to the final masks
         self.main.last_pred["masks"] = masks.copy()
         self.main.last_pred["masks_disp"] = masks.copy()
 
-        # 不再使用 box（你整个 pipeline 已经 mask-only）
+        # No more box
         N = masks.shape[0]
         self.main.last_pred["boxes"] = np.zeros((N, 4), dtype=np.float32)
 
-        # 更新 overlay
+        # update overlay
         self.main._refresh_overlay_from_masks()
 
-        # 退出当前实例编辑
+        # Quit editing the current instance
         self._edit_idx = None
         self.main.append_log("[Brush] Commit accepted.")
 
     def on_clear_clicked(self):
-        """只清当前实例（你特别要求）"""
+        """Clears only the current instance"""
         if self._edit_idx is None:
             return
 
@@ -301,22 +297,22 @@ class InstanceBrushEditor(QtCore.QObject):
         if masks is None or masks.size == 0:
             return
 
-        # 清当前
+        # Clear current
         masks[self._edit_idx] = 0
 
-        # 同步写回
+        # Synchronous write back
         self.main.last_pred["masks"] = masks.copy()
         self.main.last_pred["masks_disp"] = masks.copy()
         self.main.last_pred["boxes"] = np.zeros((masks.shape[0], 4), dtype=np.float32)
 
-        # 刷新 overlay
+        # update overlay
         self.main._refresh_overlay_from_masks()
 
         self.main.append_log(f"[Brush] Instance {self._edit_idx} cleared.")
         self._edit_idx = None
 
 
-    # ====== 内部：绘制 & 工具 ======
+    # ====== Inside: Draws & Tools ======
     def _render_overlay_fast(self):
         alp = self._alpha()
         thr = self._score_thr()
@@ -330,9 +326,9 @@ class InstanceBrushEditor(QtCore.QObject):
 
     def _ensure_all_masks_fullsize(self):
         """
-        把 masks 统一成 (N,H,W) 整图：
-        - 对 ROI 小 mask：用 boxes 贴回整图
-        - 避免 (a > 0) 这种过度二值化导致“整个 bbox 变成实心块”
+        Unify the masks into an (N,H,W) graph:
+        - Small mask on ROI: use boxes to paste back into the whole image
+        - Avoid (a > 0) such overbinarization that "the whole bbox becomes a solid block"
         """
         H, W = self.main.last_img.shape[:2]
         masks = self._masks()
@@ -344,7 +340,7 @@ class InstanceBrushEditor(QtCore.QObject):
             self._set("disp_size", (H, W))
             return
 
-        # 统一成 list
+        # Unified as a list
         if isinstance(masks, np.ndarray):
             if masks.ndim == 2:
                 masks = masks[None, ...]
@@ -354,13 +350,13 @@ class InstanceBrushEditor(QtCore.QObject):
 
         full_list = []
         for i, a in enumerate(lst):
-            a = np.asarray(a, dtype=np.float32)  # 保留为 float，用 soft mask
+            a = np.asarray(a, dtype=np.float32)  # Let's keep it as float and use soft mask
 
-            # 情况 0：已经是整图大小，直接用 soft mask
+            # It's the full size of the image, just use soft mask
             if a.shape[:2] == (H, W):
                 full = a
 
-            # 情况 1：ROI mask + box，贴回整图
+            # ROI mask + box, paste back to the whole image
             elif boxes is not None and i < len(boxes):
                 full = np.zeros((H, W), dtype=np.float32)
                 x1, y1, x2, y2 = [int(round(v)) for v in boxes[i]]
@@ -370,41 +366,40 @@ class InstanceBrushEditor(QtCore.QObject):
                 y2 = max(0, min(H, y2))
                 bw, bh = max(0, x2 - x1), max(0, y2 - y1)
                 if bw > 0 and bh > 0:
-                    # 这里只是把 28x28 映射到 bbox 大小，不做二值化
+                    # Just map 28x28 to the bbox size, without binarization
                     a_roi = cv2.resize(a, (bw, bh), interpolation=cv2.INTER_NEAREST)
                     full[y1:y2, x1:x2] = a_roi
                 else:
-                    # bbox 异常就丢弃
+                    # bbox exceptions are discarded
                     full = np.zeros((H, W), dtype=np.float32)
 
-            # 情况 2：既不是整图又没 box，只能丢弃或居中贴
+            # Neither the whole picture nor the box, can only be discarded or centered
             else:
                 full = np.zeros((H, W), dtype=np.float32)
 
             full_list.append(full)
 
-        # 先堆成 float 的 (N,H,W) soft mask
+        # Start with a float (N,H,W) soft mask
         full_float = np.stack(full_list, axis=0) if full_list else np.zeros((0, H, W), dtype=np.float32)
 
-        # 再统一做一次合理的阈值，比如 0.5
+        # Again, set a reasonable threshold, such as 0.5
         thr = 0.5
         masks_full = (full_float >= thr).astype(np.uint8) * 255
 
         self._set("masks", masks_full)
         self._set("masks_disp", masks_full.copy())
         self._set("disp_size", (H, W))
-        # # 根据二值整图重算 bbox（给后面用）
-        # self._set("boxes", self._recompute_boxes_from_full_masks(masks_full))
+
 
 
     def _recompute_boxes_from_full_masks(self, masks_full: np.ndarray):
-        # 优先使用 main 的实现
+        # Use main's implementation first
         if hasattr(self.main, "_recompute_boxes_from_full_masks"):
             try:
                 return self.main._recompute_boxes_from_full_masks(masks_full)
             except Exception:
                 pass
-        # 回退：自己算
+        # Backoff
         if masks_full is None or masks_full.size == 0:
             return np.zeros((0, 4), dtype=np.float32)
         H, W = masks_full.shape[1:]
@@ -420,7 +415,7 @@ class InstanceBrushEditor(QtCore.QObject):
             out.append([x1, y1, x2, y2])
         return np.asarray(out, dtype=np.float32)
 
-    # ====== 小工具 ======
+    # ====== tools ======
     def _is_seg_ready(self) -> bool:
         return (self.main.last_mode == "seg" and self.main.last_pred is not None and self.main.last_img is not None)
 
@@ -458,7 +453,7 @@ class InstanceBrushEditor(QtCore.QObject):
         except Exception:
             pass
 
-    # last_pred 便捷访问
+    # last_pred for easy access
     def _get(self, key, default=None):
         lp = self.main.last_pred or {}
         return lp.get(key, default)
@@ -480,7 +475,7 @@ class InstanceBrushEditor(QtCore.QObject):
         if isinstance(m, np.ndarray):
             if m.ndim == 2:
                 m = m[None, ...]
-            return m  # 不再二值化/不再拷贝
+            return m  # No more binarization/no more copying
         return None
 
     def _boxes(self) -> Optional[np.ndarray]:
@@ -498,27 +493,27 @@ class InstanceBrushEditor(QtCore.QObject):
 
     def _fill_holes_uint8(self, m: np.ndarray) -> np.ndarray:
         """
-        填充单个实例 mask 内部孔洞。
-        输入 m: (H,W) uint8, 0/255
-        输出: (H,W) uint8, 0/255
+        Fill holes inside a single instance mask.
+        Enter m: (H,W) uint8, 0/255
+        Output: (H,W) uint8, 0/255
         """
         if m is None or m.size == 0:
             return m
-        # 确保是 0/255
+        # make sure 0/255
         m = (m > 0).astype(np.uint8) * 255
 
         h, w = m.shape[:2]
-        # floodFill 需要 1 像素边界，避免外部背景被误填
+        # floodFill requires a 1-pixel boundary to avoid the outside background being filled in incorrectly
         pad = cv2.copyMakeBorder(m, 1, 1, 1, 1, cv2.BORDER_CONSTANT, value=0)
 
-        # 从外部背景 flood fill
-        mask_ff = np.zeros((h + 2 + 2, w + 2 + 2), np.uint8)  # 注意 floodFill 的 mask 要比图大2
+        # flood fill from the external background
+        mask_ff = np.zeros((h + 2 + 2, w + 2 + 2), np.uint8)
         cv2.floodFill(pad, mask_ff, (0, 0), 255)
 
-        # pad 里被填成 255 的是“外部背景”
+        # The pad is filled with 255
         outside = pad[1:-1, 1:-1]
-        holes = cv2.bitwise_not(outside)  # 反过来得到孔洞
-        filled = cv2.bitwise_or(m, holes)  # 原 mask + 孔洞
+        holes = cv2.bitwise_not(outside)
+        filled = cv2.bitwise_or(m, holes)  # Original mask + holes
 
         return filled
 

@@ -14,15 +14,15 @@ def _iou_xyxy(a, b):
 
 def _nms_keep_indices(boxes, scores, iou_thr=0.5, classes=None, classwise=False):
     """
-    返回保留的索引列表。
-    - classwise=False：全局 NMS（常见做法）
-    - classwise=True ：按类别分组做 NMS
+    Returns a list of retained indexes.
+    - classwise =False: Global NMS (common practice)
+    - classwise =True: Do NMS grouped by class
     """
     if boxes is None or scores is None or len(boxes) == 0:
         return np.array([], dtype=np.int64)
 
     if not classwise or classes is None:
-        order = np.argsort(-scores)  # 高分优先
+        order = np.argsort(-scores)  # Higher score preferred
         keep = []
         while len(order) > 0:
             i = int(order[0]); keep.append(i)
@@ -32,7 +32,7 @@ def _nms_keep_indices(boxes, scores, iou_thr=0.5, classes=None, classwise=False)
             order = rest[ious <= iou_thr]
         return np.array(keep, dtype=np.int64)
 
-    # 按类别分组
+    # Grouping by Category
     keep_all = []
     classes = classes.astype(np.int64).reshape(-1)
     for c in np.unique(classes):
