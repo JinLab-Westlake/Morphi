@@ -11,36 +11,32 @@ PAGE_HOME, PAGE_SEG, PAGE_SURV, PAGE_EDGE, PAGE_PROJ = range(5)
 from PyQt6 import QtWidgets, QtCore
 
 def _build_left_panel(main) -> QtWidgets.QWidget:
-    # === 用滚动区承载左侧内容 ===
+    # Use a scroll area to carry the content on the left
     scroll = QtWidgets.QScrollArea()
-    scroll.setWidgetResizable(True)           # 根据可视区域自动收缩/扩展
+    scroll.setWidgetResizable(True)           # Automatically shrink/expand according to the viewable area
     scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-    # scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)  # 需要无边框可开
+    # scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)  # Need no border to open
 
-    # 真正的左侧容器（放原来的控件）
+    # The true left side container
     left = QtWidgets.QWidget()
     l_lay = QtWidgets.QVBoxLayout(left)
     l_lay.setContentsMargins(6, 6, 6, 6)
     l_lay.setSpacing(8)
 
-    # --- color 黑白平衡 ---
+    # --- color Black and White balance ---
     box_levels = QtWidgets.QGroupBox("Color Levels")
     vlv = QtWidgets.QVBoxLayout(box_levels)
     vlv.setContentsMargins(10, 6, 8, 6)
     vlv.setSpacing(10)
 
     main.levels_widget = HistogramLevelsWidget()
-    # main.hist_widget = main.levels_widget  # 兼容老名字
     vlv.addWidget(main.levels_widget)
     # main.levels_widget.set_levels(0, 1.0, 255, emit_signal=False)
 
 
 
-    # def _on_levels_changed(b, g, w):
-    #     main._apply_levels_to_preview(b, g, w)
-    # UI/Layout/control.py 里的 _build_left_panel(main) 内
     def _on_levels_changed(b, g, w):
-        # 1) 记录
+        # record
         if not hasattr(main, "_adj"):
             main._adj = {"bri": 0.0, "con": 1.0, "gamma": 1.0, "r": 1.0, "g": 1.0, "b": 1.0,
                          "sat": 1.0, "hue": 0.0, "lvl_b": 0.0, "lvl_g": 1.0, "lvl_w": 255.0}
@@ -48,16 +44,16 @@ def _build_left_panel(main) -> QtWidgets.QWidget:
         main._adj["lvl_g"] = float(g)
         main._adj["lvl_w"] = float(w)
 
-        # 2) 预览（不改 last_img，只覆盖显示层）
+        # preview
         if getattr(main, "last_img", None) is not None:
             prev = main._apply_adjust_for_processing(main.last_img)
-            main._set_preview_override(prev)  # 只改变显示，不持久化
+            main._set_preview_override(prev)  # Only display changes, not persistence
 
     main.levels_widget.levelsChanged.connect(_on_levels_changed)
 
     l_lay.addWidget(box_levels)
 
-    # ===== Mask & Brush Tools 综合面板 =====
+    # ===== Mask & Brush Tools Synthesis panel =====
     box_tool = QtWidgets.QGroupBox("Mask editor")
     vtool = QtWidgets.QVBoxLayout(box_tool)
     vtool.setContentsMargins(10, 6, 8, 6)
@@ -83,7 +79,7 @@ def _build_left_panel(main) -> QtWidgets.QWidget:
     vtool.addWidget(main.chk_brush)
 
 
-    # --- 互斥锁 ---
+    # --- Mutual exclusion lock ---
     def _edit_logic(on: bool):
         if hasattr(main, "_on_toggle_edit_mode"):
             main._on_toggle_edit_mode(on)
@@ -118,11 +114,11 @@ def _build_left_panel(main) -> QtWidgets.QWidget:
     hbtn.addWidget(main.btn_brush_clear)
     vtool.addLayout(hbtn)
 
-    # 添加到左栏
+    # Add to left column
     l_lay.addWidget(box_tool)
 
 
-    # 居中堆叠容器
+    # Center stack containers
     main.stack_left = AutoSizeStack()
     v_center = QtWidgets.QVBoxLayout()
     v_center.addStretch(1)
@@ -130,7 +126,7 @@ def _build_left_panel(main) -> QtWidgets.QWidget:
     v_center.addStretch(1)
     l_lay.addLayout(v_center, 1)
 
-    # 5个页面
+    # 5 pages
     page_home = _build_page_home(main)
     page_seg  = _build_page_seg(main)
     page_surv = _build_page_surv(main)
@@ -143,7 +139,7 @@ def _build_left_panel(main) -> QtWidgets.QWidget:
     main.stack_left.addWidget(page_proj)
     main.stack_left.setCurrentIndex(PAGE_HOME)
 
-    # ===== Image List 面板 =====
+    # ===== Image List panel =====
     box_list = QtWidgets.QGroupBox("Image List")
     list_lay = QtWidgets.QVBoxLayout(box_list)
 
@@ -165,22 +161,22 @@ def _build_left_panel(main) -> QtWidgets.QWidget:
     row_btns.addStretch(1)
     list_lay.addLayout(row_btns)
 
-    # 让列表区域在垂直方向尽量扩展
+    # Make the list area as large as possible in the vertical direction
     box_list.setSizePolicy(QtWidgets.QSizePolicy.Policy.Preferred,
                            QtWidgets.QSizePolicy.Policy.Expanding)
     l_lay.addWidget(box_list, 1)
 
     main.list_images.setMinimumHeight(200)
 
-    # 塞个弹簧，顶部内容更紧凑，滚动更自然
+    # Plug a spring, the top content is more compact, rolling more natural
     l_lay.addStretch(1)
 
-    # 将 left 放进滚动区
+    # Put left in the scroll area
     scroll.setWidget(left)
 
-    # 保持整体宽度体验
+    # Keep the overall width experience
     left.setMinimumWidth(180)
-    scroll.setMinimumWidth(200)  # 视需要微调
+    scroll.setMinimumWidth(200)  # Fine-tune as needed
 
     return scroll
 
@@ -193,9 +189,9 @@ class AutoSizeStack(QtWidgets.QStackedWidget):
         w = self.currentWidget()
         if w is None:
             return super().sizeHint()
-        # 用当前页的 sizeHint
+        # Use the sizeHint of the current page
         sh = w.sizeHint()
-        # 加上自身内容边距
+        # Add its own content margin
         return sh
 
     def minimumSizeHint(self) -> QtCore.QSize:
@@ -239,7 +235,7 @@ def _build_page_home(main) -> QtWidgets.QWidget:
 
 def _goto(main, page_idx: int):
     main.stack_left.setCurrentIndex(page_idx)
-    # 关键：让上层布局重新计算
+    # Key: Make the upper layout recalculate
     main.stack_left.updateGeometry()
 
 
@@ -267,7 +263,7 @@ def _build_page_seg(main) -> QtWidgets.QWidget:
     box_seg = QtWidgets.QGroupBox("Segmentation")
     seg_lay = QtWidgets.QVBoxLayout(box_seg)
 
-    # 选择模型
+    # select model
     row_seg_top = QtWidgets.QHBoxLayout()
     row_seg_top.addWidget(QtWidgets.QLabel("Model:"))
     main.combo_seg = QtWidgets.QComboBox()
@@ -275,7 +271,7 @@ def _build_page_seg(main) -> QtWidgets.QWidget:
     main.combo_seg.currentTextChanged.connect(lambda _: main._on_combo_changed("seg"))
     row_seg_top.addWidget(main.combo_seg, 1)
 
-    # 管理模型按钮
+    # Manage Models button
     row_seg_btns = QtWidgets.QHBoxLayout()
     btn_seg_add = QtWidgets.QPushButton("Add…");     btn_seg_add.clicked.connect(lambda: main._add_model_from_file("seg"))
     btn_seg_del = QtWidgets.QPushButton("Remove");   btn_seg_del.clicked.connect(lambda: main._remove_selected_model("seg"))
@@ -290,7 +286,7 @@ def _build_page_seg(main) -> QtWidgets.QWidget:
     main.btn_run_seg.setEnabled(False)
     main.btn_run_seg.clicked.connect(main._run_seg)
 
-    # 参数表格
+    # Parameter table
     params_form = QtWidgets.QGridLayout()
     params_form.setHorizontalSpacing(10); params_form.setVerticalSpacing(8)
 
@@ -431,7 +427,7 @@ def _build_page_edge(main) -> QtWidgets.QWidget:
 
     edge_lay.addLayout(grid)
 
-    # 行尾按钮：Run / Reset
+    # End of line button: Run / Reset
     row_btns = QtWidgets.QHBoxLayout()
     row_btns.addStretch(1)
     btn_edge_reset = QtWidgets.QPushButton("Reset")
@@ -478,7 +474,7 @@ def _build_page_proj(main) -> QtWidgets.QWidget:
 
 
 def _reset_defaults(main, checked=False):
-    """恢复默认参数。"""
+    """Restore the default parameters."""
 
     main.spin_score.setValue(0.8)
     main.spin_nms.setValue(0.005)
@@ -492,20 +488,20 @@ def _reset_defaults(main, checked=False):
         _on_param_changed(main, "seg_output_dir", None)
 
 def _on_param_changed(main, key, value):
-    # 回写到 Main 的运行态
+    # Write back to the running state of Main
     if   key == "seg_score_thr": main.seg_score_thr = value
     elif key == "seg_nms_iou":   main.seg_nms_iou   = value
     elif key == "seg_min_area":  main.seg_min_area  = value
     elif key == "seg_top_k":  main.seg_top_k  = value
     elif key == "seg_output_dir": main.seg_output_dir = value
 
-    # 可选：立即刷新叠图
+    # Refresh the overlay diagram immediately
     if getattr(main, "last_img", None) is not None and getattr(main, "last_pred", None) is not None:
-        # 只让透明度/阈值变化时重绘即可；这里简单调用你已有方法
+        # Only repaint when the opacity/threshold changes
         if hasattr(main, "_on_params_changed"):
             main._on_params_changed()
 
-    # 持久化
+    # Persistence
     if hasattr(main, "settings"):
         main.settings.setValue(f"param/{key}", "" if value is None else value)
 
@@ -522,14 +518,14 @@ def _on_max_dets_changed(main,v):
     main.max_dets = int(v)
     if hasattr(main, "settings"):
         main.settings.setValue("param/max_dets", main.max_dets)
-    # 已有图像+预测时，按新阈值/上限即时重绘
+    # If the existing image + prediction is applied, the new threshold/upper limit will be instantly redrawn
     if getattr(main, "last_img", None) is not None and getattr(main, "last_pred", None) is not None:
         if hasattr(main, "_on_params_changed"):
             main._on_params_changed()
 
 
 def _reset_edge_params(main):
-    # 还原到默认值
+    # Revert to the default value
     main.spin_ec_canny_low.setValue(70)
     main.spin_ec_canny_high.setValue(110)
     main.spin_ec_eps.setValue(3.0)
@@ -549,10 +545,10 @@ def _toolbar_with_back(main, title_text: str, back_to=PAGE_HOME):
     lab = QtWidgets.QLabel(title_text)
     lab.setStyleSheet("font-weight:600;")
 
-    # === 新增：Info 区域 + 独立窗口开关 ===
-    # info（放在工具栏右侧）
+    # === Info area + independent window switch ===
+    # info
     info_row = QtWidgets.QHBoxLayout()
-    # 小的查看日志按钮
+    # Small view log button
     btn_show_log = QtWidgets.QToolButton()
     btn_show_log.setText("View Log")
     btn_show_log.clicked.connect(lambda: main._toggle_info_window(True, force_show=True))
@@ -560,7 +556,7 @@ def _toolbar_with_back(main, title_text: str, back_to=PAGE_HOME):
     info_row.addSpacing(8)
     info_row.addWidget(btn_show_log)
 
-    # 组装
+    # assembly
     bar.addWidget(btn_back)
     bar.addSpacing(6)
     bar.addWidget(lab)
