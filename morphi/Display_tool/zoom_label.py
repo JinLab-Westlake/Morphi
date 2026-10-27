@@ -4,8 +4,8 @@ from PyQt6 import QtWidgets, QtCore, QtGui
 
 class ZoomableLabel(QtWidgets.QLabel):
     """
-    带缩放/平移的图像显示控件，并提供 imageClicked(x, y)（图像像素坐标）
-    和 filesDropped(paths)（拖拽文件/文件夹路径列表）信号。
+    Image display control with zoom/pan and provides imageClicked(x, y) (image pixel coordinates)
+    And filesDropped(paths) signals.
     """
     imageClicked = QtCore.pyqtSignal(int, int)
     filesDropped = QtCore.pyqtSignal(list)  # 拖拽文件信号
@@ -26,10 +26,10 @@ class ZoomableLabel(QtWidgets.QLabel):
         self._dragging = False
         self._drag_last_pos = QtCore.QPointF(0.0, 0.0)
 
-        self.setAcceptDrops(True)  # 允许拖拽图像进display
-        self.brush_mode = False #画笔开关，默认关
+        self.setAcceptDrops(True)  # allow drag image into display
+        self.brush_mode = False # brush button, Default: turn off
 
-    # ===== 公共接口 =====
+    # ===== Public interface =====
     def set_zoom_pixmap(self, pm: QtGui.QPixmap, reset: bool = True):
         self._pixmap_orig = pm
         if reset:
@@ -53,7 +53,7 @@ class ZoomableLabel(QtWidgets.QLabel):
     def has_image(self) -> bool:
         return bool(self._pixmap_orig and not self._pixmap_orig.isNull())
 
-    # ===== 事件 =====
+    # ===== Event =====
     def resizeEvent(self, e: QtGui.QResizeEvent):
         if self.has_image():
             iw, ih = self._pixmap_orig.width(), self._pixmap_orig.height()
@@ -99,14 +99,14 @@ class ZoomableLabel(QtWidgets.QLabel):
                 iw, ih = self._pixmap_orig.width(), self._pixmap_orig.height()
                 ix = max(0, min(iw - 1, ix))
                 iy = max(0, min(ih - 1, iy))
-                # 画笔模式：左键绘制；右键/Alt作为擦除（见下）
+                # Brush mode: left click to draw; Right click /Alt to erase
                 if getattr(self, "brush_mode", False):
                     is_erase = (ev.modifiers() & QtCore.Qt.KeyboardModifier.AltModifier) or \
                                (ev.buttons() & QtCore.Qt.MouseButton.RightButton)
                     self.imagePaint.emit(ix, iy, bool(is_erase))
-                    # 画笔模式下不进入平移拖拽
+                    # No pan and drag in brush mode
                     return
-                # 非画笔：发点击选中
+                # Non brush: Click to select
                 self.imageClicked.emit(ix, iy)
             self._dragging = True
             self._drag_last_pos = ev.position()
@@ -161,7 +161,7 @@ class ZoomableLabel(QtWidgets.QLabel):
         painter.drawPixmap(target, pm, source)
         painter.end()
 
-    # 拖拽
+    # Drag
     def dragEnterEvent(self, e: QtGui.QDragEnterEvent):
         md = e.mimeData()
         if md.hasUrls() or md.hasText():
@@ -190,12 +190,12 @@ class ZoomableLabel(QtWidgets.QLabel):
                 if line:
                     paths.append(line)
         if paths:
-            self.filesDropped.emit(paths)  # 触发信号，交给 Main 处理
+            self.filesDropped.emit(paths)  # The trigger signal is passed to Main
             e.acceptProposedAction()
         else:
             e.ignore()
 
-    # 坐标换算
+    # Coordinate conversion
     def _map_widget_to_image(self, pos: QtCore.QPointF) -> Optional[QtCore.QPointF]:
         if not self.has_image():
             return None

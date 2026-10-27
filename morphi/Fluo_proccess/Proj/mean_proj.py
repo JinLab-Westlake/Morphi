@@ -5,16 +5,16 @@ from typing import List, Tuple
 
 def focus_stack_sobel(image_paths: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    改为：基于平均投影（Mean Projection）做 focus stacking。
+    focus stacking is based on the Mean Projection.
     Args:
-        image_paths: 多张同视野不同焦面的图片路径（尺寸必须一致）
+        image_paths: Paths for multiple images with different focal planes in the same field of view (must be of the same size)
     Returns:
-        composite:  合成图 (H,W) 或 (H,W,3)，为逐像素平均结果
-        idx:        每个像素取自哪一层的索引 (H,W)，此处恒为 0（无索引意义，仅兼容旧接口）
-        sharp_stack:灰度强度堆栈 (N,H,W)，用于调试或可视化
+        composite: Composite plot (H,W) or (H,W,3), which is the per-pixel average result
+        idx: the index (H,W) of the layer from which each pixel is taken, which is always 0 (no index meaning, only compatible with the old interface)
+        sharp_stack: Grayscale intensity stack (N,H,W) for debugging or visualization
     """
     if len(image_paths) < 2:
-        raise ValueError("至少选择两张图片做融合")
+        raise ValueError("Select at least two images to fuse")
 
     imgs = []
     grays = []
@@ -23,16 +23,16 @@ def focus_stack_sobel(image_paths: List[str]) -> Tuple[np.ndarray, np.ndarray, n
     for p in image_paths:
         img = cv2.imread(p, cv2.IMREAD_GRAYSCALE)
         if img is None:
-            raise IOError(f"读取失败: {p}")
+            raise IOError(f"Fail to load: {p}")
 
-        # 校验尺寸一致
+        # Check the size is consistent
         h, w = img.shape[:2]
         if H is None:
             H, W = h, w
         elif (H, W) != (h, w):
-            raise ValueError(f"尺寸不一致：{p} 是 {h}x{w}，而前一张是 {H}x{W}")
+            raise ValueError(f"Inconsistent size：{p} is {h}x{w}, and the previous one is {H}x{W}")
 
-        # 灰度转换用于记录强度堆栈
+        # Grayscale (for projection metric)
         if img.ndim == 2:
             gray = img
         else:
@@ -41,14 +41,14 @@ def focus_stack_sobel(image_paths: List[str]) -> Tuple[np.ndarray, np.ndarray, n
         imgs.append(img.astype(np.float32))
         grays.append(gray.astype(np.float32))
 
-    stack_img = np.stack(imgs, axis=0)    # (N,H,W) 或 (N,H,W,3)
+    stack_img = np.stack(imgs, axis=0)    # (N,H,W) or (N,H,W,3)
     sharp_stack = np.stack(grays, axis=0) # (N,H,W)
 
     # === Mean Projection ===
-    composite = np.mean(stack_img, axis=0)  # 平均融合
+    composite = np.mean(stack_img, axis=0)  # Average fusion
     composite = np.clip(composite, 0, 255).astype(np.uint8)
 
-    # 平均投影没有“选层”概念，idx 填 0 占位即可
+    # There is no "layer selection" concept for average projection, idx fills in 0 placeholders
     idx = np.zeros((H, W), dtype=np.int32)
 
     return composite, idx, sharp_stack

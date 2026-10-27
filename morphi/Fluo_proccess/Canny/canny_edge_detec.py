@@ -10,15 +10,15 @@ from typing import Callable, Optional
 
 @dataclass
 class EdgeClusterParams:
-    # alpha: float = 2.0          # 对比度
-    # beta: float = 1.0           # 亮度
+    # alpha: float = 2.0          # contrast
+    # beta: float = 1.0           # brightness
     canny_low: int = 70
     canny_high: int = 110
     db_eps: float = 3.0
     db_min_samples: int = 5
     db_min_cluster_size: int = 10
-    morph_kernel: int = 3       # 膨胀核大小
-    image_glob: str = None  # 允许改成 *.tif
+    morph_kernel: int = 3       # Expansion kernel size
+    image_glob: str = None  # allow change to *.tif
 
     def __post_init__(self):
         if self.image_glob is None:
@@ -60,7 +60,7 @@ def process_one_image(image_path: str,
                       params: EdgeClusterParams,
                       progress_cb=None):
     """
-    只处理单张图片，保存可视化结果和标签图。
+    only process one image, save it to disk.
     - progress_cb(1, 1, path, stats)
     """
     os.makedirs(output_dir, exist_ok=True)
@@ -69,7 +69,7 @@ def process_one_image(image_path: str,
     img = cv2.imread(image_path)
     vis, lab, stats = process_image(img, params)
 
-    # 可能无有效边缘
+    # may have useless edge
     if lab is not None:
         cv2.imwrite(os.path.join(output_dir, f"clustered_{os.path.basename(image_path)}"), vis)
         cv2.imwrite(os.path.join(label_dir,   os.path.basename(image_path)), lab * 255)
@@ -81,14 +81,14 @@ def process_one_image(image_path: str,
 
 
 def process_image(image_bgr: np.ndarray, params: EdgeClusterParams):
-    """对单张图像执行：增强→Canny→DBSCAN→膨胀→连通域→轮廓 & 标签图"""
+    """Perform on a single image"""
     if image_bgr is None or image_bgr.size == 0:
         return None, None, {"clusters": 0}
 
-    # 边缘
+    # edges
     edges = cv2.Canny(image_bgr, params.canny_low, params.canny_high)
 
-    # DBSCAN 聚类
+    # DBSCAN cluster
     clustered_edges, n_clusters = _cluster_edges_with_dbscan(
         edges,
         eps=params.db_eps,
@@ -98,11 +98,11 @@ def process_image(image_bgr: np.ndarray, params: EdgeClusterParams):
     if clustered_edges is None:
         return image_bgr, np.zeros(image_bgr.shape[:2], np.uint8), {"clusters": 0}
 
-    # 形态学（膨胀）
+    # dilation
     kernel = np.ones((params.morph_kernel, params.morph_kernel), np.uint8)
     clustered_edges = cv2.dilate(clustered_edges, kernel, iterations=1)
 
-    # 连通域（用 R 通道就够）
+    # Connected domain
     labels = measure.label(clustered_edges[..., 0], connectivity=2)
     regions = measure.regionprops(labels, intensity_image=cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY))
 
@@ -131,9 +131,9 @@ def process_folder(image_folder: str,
                    progress_cb=None,
                    should_cancel: Optional[Callable[[], bool]] = None):
     """
-    批处理整个文件夹。
-    - progress_cb(i, n, path, stats) 用于 UI 更新进度
-    - should_cancel() 返回 True 时提前终止
+    Batch the entire folder.
+    - progress_cb (i, n, path, stats) for UI update progress
+    - should_cancel() terminates early when it returns True
     """
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(label_dir, exist_ok=True)
@@ -145,11 +145,11 @@ def process_folder(image_folder: str,
             break
         img = cv2.imread(path)
         vis, lab, stats = process_image(img, params)
-        if lab is None:  # 无有效边缘
+        if lab is None:  # useless edges
             if progress_cb: progress_cb(i, n, path, stats)
             continue
 
-        # 保存
+        # save
         cv2.imwrite(os.path.join(output_dir, f"clustered_{os.path.basename(path)}"), vis)
         cv2.imwrite(os.path.join(label_dir,   os.path.basename(path)), lab * 255)
 
