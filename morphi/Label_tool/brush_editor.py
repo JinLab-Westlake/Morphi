@@ -20,15 +20,15 @@ class InstanceBrushEditor(QtCore.QObject):
 
     def __init__(self, main, draw_overlay_func, *, coords_mode: str = "orig"):
         """
-        :param main: 你的 Main 窗口对象，要求包含：
+        :param main:
             - last_img: np.ndarray (H,W,3) BGR
             - last_pred: dict or None. 需包含 "masks"(N,H,W或ROI)、"boxes"(N,4)、"scores"、"classes"
             - last_mode: str, 需为 "seg" 才可编辑
             - image_label: 有 _map_widget_to_image(posF) 方法的控件
             - append_log(str), set_process_info(str), show_image(img, reset_zoom=False)
-            - _recompute_boxes_from_full_masks(masks) 方法（若无，会使用类内置回退实现）
-            - slider_alpha(0..100) 和 seg_score_thr(阈值)（若没有会用默认值）
-        :param draw_overlay_func: 你项目里的 draw_overlay 函数
+            - _recompute_boxes_from_full_masks(masks) 方法
+            - slider_alpha(0..100) 和 seg_score_thr(阈值)
+        :param draw_overlay_func
         :param coords_mode: 传给 draw_overlay 的 coords 参数，通常 "orig"
         """
         super().__init__(main)

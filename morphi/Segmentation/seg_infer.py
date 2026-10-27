@@ -24,7 +24,6 @@ class Segmentor:
       - iou_threshold               (float32 [1])
       - score_threshold             (float32 [1])
       - TopK_k                      (int64 [1])
-    如果你的 onnx 没有把这些做成输入，此类会自动忽略它们，逻辑不受影响。
     """
     def __init__(self, onnx_path, use_short_edge_resize=True, min_size=800, max_size=1333):
         self.session = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
@@ -147,7 +146,7 @@ class Segmentor:
         if self.input_rank == 4:
             x = x[None, ...]
 
-        # —— 构造 feeds ——（只有当模型真的有这些输入名时才会喂）
+        # —— 构造 feeds ——
         feeds = { self.input_name: x }
         rp = self.runtime_params
 
@@ -229,7 +228,7 @@ def draw_overlay(
     canvas = img_bgr.copy()
     Hc, Wc = canvas.shape[:2]
 
-    # 参考尺寸（当 coords="frame" 需要做比例换算时使用）
+    # 参考尺寸
     if frame_ref is None:
         Hf, Wf = Hc, Wc
     else:
