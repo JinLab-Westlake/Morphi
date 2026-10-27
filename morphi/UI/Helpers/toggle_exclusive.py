@@ -59,4 +59,3 @@ class TwoCheckExclusive:
         """
         if self.edit_cb.isChecked() and self.brush_cb.isChecked():
             self._set_checked(self.brush_cb, False)
-        # 单勾或都未勾都可，不额外动作

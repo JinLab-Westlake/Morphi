@@ -505,7 +505,7 @@ def _on_param_changed(main, key, value):
         if hasattr(main, "_on_params_changed"):
             main._on_params_changed()
 
-    # 持久化（如果你启用了 QSettings）
+    # 持久化
     if hasattr(main, "settings"):
         main.settings.setValue(f"param/{key}", "" if value is None else value)
 

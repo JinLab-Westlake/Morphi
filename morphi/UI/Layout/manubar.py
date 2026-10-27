@@ -4,7 +4,7 @@ import os
 
 def _build_menubar(self):
     menubar = self.menuBar()
-    # macOS 上用原生菜单栏（可选）
+    # macOS 上用原生菜单栏
     try:
         menubar.setNativeMenuBar(True)
     except Exception:
@@ -28,7 +28,7 @@ def _build_menubar(self):
     act_open_surv.triggered.connect(lambda: self._add_model_from_file("surv"))
     m_open_model.addAction(act_open_surv)
 
-    # --- Set output directory（如果你需要） ---
+    # --- Set output directory ---
     act_set_outdir = QtGui.QAction("Set Output Directory…", self)
     act_set_outdir.triggered.connect(lambda: _pick_output_dir(self))
     m_file.addAction(act_set_outdir)
@@ -38,18 +38,18 @@ def _build_menubar(self):
     # --- Save current result ---
     act_save = QtGui.QAction("Save Current Result", self)
     act_save.setShortcut(QtGui.QKeySequence.StandardKey.Save)
-    act_save.triggered.connect(self._save_overlay)  # 你已有的方法
+    act_save.triggered.connect(self._save_overlay)
     m_file.addAction(act_save)
 
     m_file.addSeparator()
 
-    # --- Recent files（可选子菜单） ---
+    # --- Recent files---
     self.m_recent = m_file.addMenu("Open Recent")
     _rebuild_recent_menu(self)
 
     m_file.addSeparator()
 
-    # --- Preferences（可选） ---
+    # --- Preferences ---
     act_prefs = QtGui.QAction("Preferences…", self)
     # act_prefs.setShortcut(QtGui.QKeySequence("Ctrl+,"))
     act_prefs.triggered.connect(self._open_preferences_dialog if hasattr(self, "_open_preferences_dialog") else lambda: None)
@@ -109,14 +109,12 @@ def _open_image_from_path(self, path: str):
     if not os.path.exists(path):
         QtWidgets.QMessageBox.warning(self, "Open Recent", f"File not found:\n{path}")
         return
-    # 你可以直接复用 choose_image 里的加载逻辑；
-    # 如果 choose_image 弹对话框，不方便复用，就写一个专门的加载函数:
     self._load_image(path) if hasattr(self, "_load_image") else self._load_image_fallback(path)
 
 def _load_image_fallback(self, path: str):
-    # 最简兜底：把路径写到 label，触发你的中间显示逻辑
+
     self.path_label.setText(path)
-    # TODO: 根据你的实际加载逻辑完成显示与推理前的准备
+
 
 
 

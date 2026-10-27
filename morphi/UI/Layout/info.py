@@ -49,9 +49,5 @@ from PyQt6 import QtCore, QtGui, QtWidgets
 #     if img is None:
 #         return
 #     self.last_img = img
-#     self.show_image(img)  # 这里用你已有的 show_image
-#
-#
-#
-#
-#
+#     self.show_image(img)
+

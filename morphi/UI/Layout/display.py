@@ -50,26 +50,6 @@ def to_qimage(img) -> QtGui.QImage:
     else:
         raise ValueError(f"Unsupported ndim: {img.ndim}")
 
-# def show_numpy_image(main, img, path: Optional[str] = None):
-#     """将 ndarray 显示到 main.image_label，自动等比例缩放。"""
-#     qimg = to_qimage(img)
-#     if qimg is None:
-#         return
-#     main._qimage_ref = qimg  # 防止底层buffer被回收
-#     pm = QtGui.QPixmap.fromImage(qimg).scaled(
-#         main.image_label.size(),
-#         QtCore.Qt.AspectRatioMode.KeepAspectRatio,
-#         QtCore.Qt.TransformationMode.SmoothTransformation
-#     )
-#     main._pixmap_ref = pm
-#     main.image_label.setPixmap(pm)
-#
-#     # 更新状态
-#     main.last_img = img
-#     if path is not None:
-#         main.last_img_path = path
-#         main.path_label.setText(path)
-#     main.btn_save.setEnabled(True)
 
 def clear_image_display(self):
     """清空显示区与状态；供删除/重置时调用。"""
@@ -84,7 +64,7 @@ def clear_image_display(self):
     self.last_pred = None
     self.last_mode = None
 
-    # 保存按钮自动禁用（建议用统一更新函数）
+    # 保存按钮自动禁用
     if hasattr(self, "_update_save_button"):
         self._update_save_button()
     else:
@@ -193,7 +173,7 @@ class ZoomLabel(QtWidgets.QLabel):
 
     def set_zoom_pixmap(self, pm: QtGui.QPixmap, reset=True):
         self._pixmap = pm
-        self.setPixmap(pm)  # 你已有的逻辑继续保留
+        self.setPixmap(pm)
 
     def mousePressEvent(self, ev: QtGui.QMouseEvent):
         if not self._pixmap:

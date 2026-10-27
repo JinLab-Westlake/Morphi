@@ -49,8 +49,6 @@ def promote_all_topk_k_to_input(m, input_name='TopK_k'):
 
 def promote_all_nms_thresholds_to_inputs(m, iou_name='NMS_iou_thr', score_name='NMS_score_thr'):
     g=m.graph; out2node,init=maps(m)
-    # ONNX NMS: inputs = [boxes, scores, max_per_class?, iou_thr?, score_thr?]
-    # 我们只把第4/5个（阈值）改成输入（若存在且是常量）
     ensure_input(g, iou_name,   TensorProto.FLOAT, [1])
     ensure_input(g, score_name, TensorProto.FLOAT, [1])
     rewired_iou=rewired_sc=0
@@ -74,7 +72,6 @@ if __name__=='__main__':
     onnx_out = 'model_runtime_k.onnx'
     m = load(onnx_in)
     m = promote_all_topk_k_to_input(m, input_name='TopK_k')
-    # 可选：如果模型里有 NMS 且你想动态阈值，也打开这一行：
     # m = promote_all_nms_thresholds_to_inputs(m, iou_name='NMS_iou_thr', score_name='NMS_score_thr')
     save(m, onnx_out)
     print('saved ->', onnx_out)
