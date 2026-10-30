@@ -6,14 +6,14 @@ import os
 from Display_tool.zoom_label import ZoomableLabel
 
 def to_qimage(img) -> QtGui.QImage:
-    """支持 uint8/uint16, 灰度/BGR/BGRA -> QImage。优先保留16位灰度显示。"""
+    """Supports uint8/uint16, grayscale /BGR/BGRA -> QImage. Priority is reserved for 16-bit grayscale display."""
     import numpy as np
     if img is None:
         return None
     if img.ndim == 2:
         h, w = img.shape
         if img.dtype == np.uint16:
-            # Qt6 支持 16位灰度
+            # Qt6 supports 16-bit grayscale
             qimg = QtGui.QImage(
                 img.data, w, h, w * 2, QtGui.QImage.Format.Format_Grayscale16
             )
@@ -24,7 +24,7 @@ def to_qimage(img) -> QtGui.QImage:
             )
             return qimg.copy()
         else:
-            # 其他dtype做可视化归一化到8位
+            # Other Dtypes do visualization normalization to 8 bits
             vis8 = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
             qimg = QtGui.QImage(
                 vis8.data, w, h, w, QtGui.QImage.Format.Format_Grayscale8
@@ -52,30 +52,31 @@ def to_qimage(img) -> QtGui.QImage:
 
 
 def clear_image_display(self):
-    """清空显示区与状态；供删除/重置时调用。"""
-    # 清掉 pixmap 与文本
+    """Clear the display area and status; Called for deletion/reset."""
+    # Clear the pixmap and text
     self.image_label.clear()
     self.image_label.setText("Please choose an image")
     self.path_label.setText("No file selected")
 
-    # 状态复位
+    # State reset
     self.last_img = None
     self.last_img_path = None
     self.last_pred = None
     self.last_mode = None
 
-    # 保存按钮自动禁用
+    # The Save button is automatically disabled
     if hasattr(self, "_update_save_button"):
         self._update_save_button()
     else:
         self.btn_save.setEnabled(False)
 
-    # 跑按钮状态联动
+    # Run button state linkage
     self._update_run_buttons()
 
 
 def install_autoresize(main):
-    """让 label 大小变化时自动重绘以适配。需要在构建界面后调用一次。"""
+    """Make the label redraw automatically when it changes size.
+        It needs to be called once after building the interface."""
     class _Filter(QtCore.QObject):
         def eventFilter(self, obj, ev):
             if obj is main.image_label and ev.type() == QtCore.QEvent.Type.Resize:
@@ -100,12 +101,12 @@ def _build_center_panel(main) -> QtWidgets.QWidget:
     w_lay.setContentsMargins(0, 0, 0, 0)
     # w_lay.setSpacing(6)
 
-    # 顶部按钮行
+    # Top button row
     btn_row = QtWidgets.QHBoxLayout()
     btn_row.setContentsMargins(8,0,8, 20)
     # btn_row.setSpacing(10)
 
-    # 路径行（新建 path_label 并挂到 main）
+    # Path line
     path_row = QtWidgets.QHBoxLayout()
     path_row.setContentsMargins(8, 8, 8, 4)
     # path_row.setSpacing(6)
@@ -113,7 +114,7 @@ def _build_center_panel(main) -> QtWidgets.QWidget:
     path_caption = QtWidgets.QLabel("Path:")
     path_caption.setStyleSheet("color:#666;")
 
-    main.path_label = QtWidgets.QLabel("No file selected")   # ★ 关键：创建并挂到 main
+    main.path_label = QtWidgets.QLabel("No file selected")   # create path_label and attach to main
     main.path_label.setWordWrap(True)
     main.path_label.setStyleSheet("color: grey;")
     main.path_label.setTextInteractionFlags(
@@ -124,7 +125,7 @@ def _build_center_panel(main) -> QtWidgets.QWidget:
     path_row.addWidget(main.path_label, 1)
     w_lay.addLayout(path_row)
 
-    # 图像显示区
+    # Image display area
     center = QtWidgets.QScrollArea()
     center.setWidgetResizable(True)
     inner = QtWidgets.QWidget()
@@ -179,13 +180,13 @@ class ZoomLabel(QtWidgets.QLabel):
         if not self._pixmap:
             return super().mousePressEvent(ev)
 
-        # —— 将 label 点坐标映射到图像像素坐标 ——
+        # Map label point coordinates to image pixel coordinates ——
         label_w = self.width()
         label_h = self.height()
         img_w = self._pixmap.width()
         img_h = self._pixmap.height()
 
-        # 居中等比缩放的常见映射
+        # Common mappings for centered proportional scaling
         scale = min(label_w / img_w, label_h / img_h)
         disp_w = int(img_w * scale)
         disp_h = int(img_h * scale)

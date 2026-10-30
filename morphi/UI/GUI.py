@@ -82,15 +82,15 @@ class Main(QtWidgets.QMainWindow):
         # add menubar
         _build_menubar(self)
 
-        # ---- 结果导出 & 标签编辑 菜单 ----
+        # ---- Result export & TAB edit menu ----
         menu = self.menuBar().addMenu("Annotation")
 
-        # --- 仅导出 masks(PNG) ---
+        # --- only export masks(PNG) ---
         act_export_masks_png = QtGui.QAction("Export mask (PNG)…", self)
         act_export_masks_png.triggered.connect(self._save_masks_png_only)
         menu.addAction(act_export_masks_png)
 
-        # --- 仅导出 masks(JSON) ---
+        # --- only export masks(JSON) ---
         act_export_masks_json = QtGui.QAction("Export mask (JSON)…", self)
         act_export_masks_json.triggered.connect(self._save_masks_json_only)
         menu.addAction(act_export_masks_json)
@@ -104,10 +104,10 @@ class Main(QtWidgets.QMainWindow):
 
         self.edit_mode = False
         self._deleted_ids = set()
-        self._selected_inst = None  # 当前高亮选中的实例索引
+        self._selected_inst = None  # The index of the currently highlighted instance
         self.chk_edit_mode.toggled.connect(self._on_toggle_edit_mode)
 
-        # click, 只选中并高亮；删除靠键盘
+        # click, which only selects and highlights Delete keyboard
         self.image_label.imageClicked.connect(self._on_image_click_select)
 
         self.brush_editor = InstanceBrushEditor(self, draw_overlay)
@@ -115,7 +115,7 @@ class Main(QtWidgets.QMainWindow):
         if hasattr(self, "chk_brush"):
             self.chk_brush.toggled.connect(lambda on: self.brush_editor.enable() if on else self.brush_editor.disable())
 
-        # 这里加：给 Commit / Clear 按钮绑槽函数
+        # Here: bind the slot function to the Commit/Clear button
         if hasattr(self, "btn_brush_commit"):
             self.btn_brush_commit.clicked.connect(self.brush_editor.on_commit_clicked)
 
@@ -139,20 +139,20 @@ class Main(QtWidgets.QMainWindow):
         # filter None
         self._click_focus_widgets = [w for w in self._click_focus_widgets if w is not None]
 
-        # === 调色参数记录字典 ===
-        # 用于保存滑块的实时值（只记录，不改变显示）
+        # === Record dictionary of toning parameters ===
+        # Used to store the real-time value of the slider
         self._adj = {
-            "bri": 0.0,      # 亮度 [-100,100]
-            "con": 1.0,      # 对比度倍率 [0.1,3.0]
-            "gamma": 1.0,    # Gamma 校正 [0.1,3.0]
-            "r": 1.0,        # R 通道增益 [0.1,3.0]
-            "g": 1.0,        # G 通道增益 [0.1,3.0]
-            "b": 1.0,        # B 通道增益 [0.1,3.0]
-            "sat": 1.0,      # 饱和度 [0.1,3.0]
-            "hue": 0.0,      # 色相偏移（度数）[-180,180]
-            "lvl_b": 0.0,    # levels 黑场
+            "bri": 0.0,      # brightness [-100,100]
+            "con": 1.0,      # contrast [0.1,3.0]
+            "gamma": 1.0,    # Gamma adjust [0.1,3.0]
+            "r": 1.0,        # R channel [0.1,3.0]
+            "g": 1.0,        # G channel [0.1,3.0]
+            "b": 1.0,        # B channel [0.1,3.0]
+            "sat": 1.0,      # saturation [0.1,3.0]
+            "hue": 0.0,      # Phase of color [-180,180]
+            "lvl_b": 0.0,    # levels black
             "lvl_g": 1.0,    # levels gamma
-            "lvl_w": 255.0,  # levels 白场
+            "lvl_w": 255.0,  # levels white
         }
 
         # setting only click can be focused
@@ -170,7 +170,7 @@ class Main(QtWidgets.QMainWindow):
 
         self._hist_debounce = QtCore.QTimer(self)
         self._hist_debounce.setSingleShot(True)
-        self._hist_debounce.setInterval(33)  # 约 30 FPS
+        self._hist_debounce.setInterval(33)  # about 30 FPS
         self._hist_debounce.timeout.connect(self._do_update_levels_histogram)
 
         # After the window is displayed, pull the focus back to
@@ -248,6 +248,10 @@ class Main(QtWidgets.QMainWindow):
             self._save_models_dict("models_seg_json", self.models_seg)
             self.combo_seg.addItem(name);
             self.combo_seg.setCurrentText(name)
+
+            # add model in real
+            self._set_current_model("seg")
+
             self.append_log(f"[Seg] Added: {name} -> {path}")
         else:
             if name in self.models_surv:
@@ -257,6 +261,10 @@ class Main(QtWidgets.QMainWindow):
             self._save_models_dict("models_surv_json", self.models_surv)
             self.combo_surv.addItem(name);
             self.combo_surv.setCurrentText(name)
+
+            # add weight
+            self._set_current_model("surv")
+
             self.append_log(f"[Surv] Added: {name} -> {path}")
 
     def _remove_selected_model(self, task):
@@ -322,23 +330,25 @@ class Main(QtWidgets.QMainWindow):
             self.settings.setValue("current_model_name_seg", name)
             self.append_log(f"[Seg] Loaded: {name} -> {path}")
             self.btn_run_seg.setEnabled(self.last_img is not None)
-        else:
-            name = self.combo_surv.currentText()
-            if not name: return
-            path = self.models_surv.get(name, "")
-            if not path or not os.path.exists(path):
-                QtWidgets.QMessageBox.warning(self, "Missing file", f"[Surv] Not found:\n{path}");
-                return
-            try:
-                self.seg_surv = Segmentor(path)
-            except Exception as e:
-                QtWidgets.QMessageBox.critical(self, "Load failed", f"[Surv] {e}");
-                return
-            self.lab_model_surv.setText(path);
-            self.lab_model_surv.setStyleSheet("")
-            self.settings.setValue("current_model_name_surv", name)
-            self.append_log(f"[Surv] Loaded: {name} -> {path}")
-            self.btn_run_surv.setEnabled(self.last_img is not None)
+        # else:
+        #     name = self.combo_surv.currentText()
+        #     if not name: return
+        #     path = self.models_surv.get(name, "")
+        #     if not path or not os.path.exists(path):
+        #         QtWidgets.QMessageBox.warning(self, "Missing file", f"[Surv] Not found:\n{path}");
+        #         return
+        #     try:
+        #         self.seg_surv = Segmentor(path)
+        #     except Exception as e:
+        #         QtWidgets.QMessageBox.critical(self, "Load failed", f"[Surv] {e}");
+        #         return
+        #     self.lab_model_surv.setText(path);
+        #     self.lab_model_surv.setStyleSheet("")
+        #     self.settings.setValue("current_model_name_surv", name)
+        #     self.append_log(f"[Surv] Loaded: {name} -> {path}")
+        #     self.btn_run_surv.setEnabled(self.last_img is not None)
+        # if all models state change, then refresh button
+        self._update_run_button()
 
 
 
@@ -353,17 +363,17 @@ class Main(QtWidgets.QMainWindow):
         self._load_and_preview(path)
 
     def _on_files_dropped(self, paths: list[str]):
-        """接收从 display 拖入的路径（文件或文件夹），将图片加入列表，并预览一张。"""
+        """Take the drag path (file or folder) from the display, add the images to the list, and preview one."""
         self._ensure_image_paths_list()
 
-        # 展开：若是目录，抓取其中所有图片；若是图片则保留
+        # and: if it's a directory, grab all the images in it. If it's an image, keep it
         def _collect_images(path: str) -> list[str]:
             if os.path.isdir(path):
                 imgs = []
                 for ext in ("*.png", "*.jpg", "*.jpeg", "*.bmp", "*.tif", "*.tiff"):
                     imgs.extend(glob.glob(os.path.join(path, "**", ext), recursive=True))
                 return sorted(set(imgs))
-            # 文件：判断是否图片
+            # File: Determines if it is an image
             ext = os.path.splitext(path)[1].lower()
             if ext in {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"} and os.path.isfile(path):
                 return [path]
@@ -372,11 +382,11 @@ class Main(QtWidgets.QMainWindow):
         all_new = []
         for p in paths:
             all_new.extend(_collect_images(p))
-        all_new = [p for p in all_new if p]  # 清理空项
+        all_new = [p for p in all_new if p]  # Clearing empty items
         if not all_new:
             return
 
-        # 去重加入 self.image_paths / self.list_images
+        # add self.image_paths / self.list_images
         added = 0
         for p in all_new:
             if p not in self.image_paths:
@@ -387,12 +397,12 @@ class Main(QtWidgets.QMainWindow):
         if added:
             self.append_log(f"[Images] Added {added} file(s) from drag-and-drop.")
 
-            # 记住最近目录
+            # remember the latest directory
             if hasattr(self, "settings"):
                 base_dir = os.path.dirname(all_new[0])
                 self.settings.setValue("recent/dir_images", base_dir)
 
-            # 预览第一张
+            # preview the first one
             first = all_new[0]
             img = cv2.imread(first)
             if img is not None:
@@ -477,8 +487,8 @@ class Main(QtWidgets.QMainWindow):
 
     def _save_overlay(self):
         """
-        保存当前显示图像。优先使用内存中的 _display_img（纯图像，无背景）。
-        若没有 _display_img，则抓取 image_label，再按居中等比适配规则裁掉留白区域。
+        Save the current display image. The in-memory _display_img (pure image, no background) is preferred.
+        If there is no _display_img, grab the image_label and use the center-ratio adaptation rule to crop the white space.
         """
         path, selected_filter = QtWidgets.QFileDialog.getSaveFileName(
             self, "Save current display", "",
@@ -487,7 +497,7 @@ class Main(QtWidgets.QMainWindow):
         if not path:
             return
 
-        # 自动补后缀
+        # Autofill suffixes
         base, ext = os.path.splitext(path)
         if not ext:
             if "JPEG" in (selected_filter or "").upper():
@@ -497,7 +507,7 @@ class Main(QtWidgets.QMainWindow):
             else:
                 path = base + ".png"
 
-        # —— 方案A：优先用 _display_img（纯图像、无背景）——
+        # —— _display_img (pure image, no background) is preferred. ——
         try:
             if getattr(self, "_display_img", None) is not None:
                 import cv2
@@ -509,49 +519,48 @@ class Main(QtWidgets.QMainWindow):
         except Exception as e:
             print("[DBG] Save via _display_img failed:", e)
 
-        # —— 方案B：抓取 image_label 并裁剪出真实图像区域（等比填充产生的留白将被去掉）——
+        # —— Grab image_label and crop out the real image area ——
         try:
             target = getattr(self, "image_label", self)
-            pm = target.grab()  # QPixmap（包含背景）
+            pm = target.grab()  # QPixmap
             if pm.isNull():
                 raise RuntimeError("grab() returned null pixmap")
             qimg = pm.toImage().convertToFormat(QtGui.QImage.Format.Format_ARGB32)
 
-            # 估算图像在 label 内的摆放矩形（常见的等比居中自适应：AspectFit）
-            # 需要 pm 的原始像素大小（抓屏像素），以及 label 的逻辑尺寸
+            # Estimate the image placement rectangle inside the label
             label_w = target.width()
             label_h = target.height()
 
-            # 当前展示的原始图像尺寸（优先从 _pixmap_ref 拿）
+            # Original image dimensions currently displayed
             if getattr(self, "_pixmap_ref", None) is not None:
                 img_w = self._pixmap_ref.width()
                 img_h = self._pixmap_ref.height()
             else:
-                # 兜底：用 label 尺寸近似
+                # Bottom: Approximate with label size
                 img_w, img_h = label_w, label_h
 
-            # 等比缩放以适配 label
+            # Scale equally to fit the label
             scale = min(label_w / max(1, img_w), label_h / max(1, img_h))
             draw_w = int(round(img_w * scale))
             draw_h = int(round(img_h * scale))
-            # 居中留白
+            # Center and leave blank
             off_x = (label_w - draw_w) // 2
             off_y = (label_h - draw_h) // 2
 
-            # 设备像素比（HiDPI）
+            # Device Pixel Ratio (HiDPI)
             dpr = pm.devicePixelRatio() if hasattr(pm, "devicePixelRatio") else 1.0
             rx = int(round(off_x * dpr))
             ry = int(round(off_y * dpr))
             rw = int(round(draw_w * dpr))
             rh = int(round(draw_h * dpr))
 
-            # 防越界
+            # Prevent boundary crossing
             rw = max(1, min(rw, qimg.width() - rx))
             rh = max(1, min(rh, qimg.height() - ry))
 
             cropped = qimg.copy(rx, ry, rw, rh)
 
-            # 写盘（QImageWriter）
+            # Writing disk (QImageWriter)
             fmt = os.path.splitext(path)[1].lower().lstrip(".") or "png"
             if fmt in ("jpg", "jpeg"): fmt = "jpeg"
             if fmt in ("tif", "tiff"): fmt = "tiff"
@@ -561,7 +570,7 @@ class Main(QtWidgets.QMainWindow):
                 self.append_log(f"[Save] Saved current display image: {path}")
                 return
 
-            # QImageWriter 失败则降级为 OpenCV
+            # QImageWriter fails and degrades to OpenCV
             import numpy as np, cv2
             width, height = cropped.width(), cropped.height()
             ptr = cropped.bits()
@@ -590,14 +599,15 @@ class Main(QtWidgets.QMainWindow):
                             QtGui.QImage.Format.Format_RGB888)
         pm = QtGui.QPixmap.fromImage(qimg)
 
-        # 交给 zoom label；reset_zoom=True 表示每次展示新图回到 1:1
+        # Give it to zoom label.
+        # reset_zoom=True goes back to 1:1 each time a new image is displayed
         self.image_label.set_zoom_pixmap(pm, reset=reset_zoom)
 
         # enable save
         if hasattr(self, "btn_save"):
             self.btn_save.setEnabled(True)
 
-        # 保留一份当前显示像素，供“保存显示内容”使用
+        # Keep a copy of the current display pixel for use in Save Display
         self._pixmap_ref = pm
         self._update_levels_histogram()
 
@@ -639,14 +649,15 @@ class Main(QtWidgets.QMainWindow):
         # reshape to (N,), (N,), (N,)
         boxes, scores, classes, masks = _normalize_det_tensors(boxes, scores, classes, masks)
 
-        # ------- reshape box 回原图大小 -------
-        # 原图尺寸（显示用）
+        # reshape box
+
         orig_H, orig_W = self.last_img.shape[:2]
 
-        # 模型 frame 尺寸（推理用）
+        # Model frame size
         frm_H, frm_W = frame.shape[:2] if frame is not None else (orig_H, orig_W)
 
-        # 如果 frame 尺寸与原图不同，把 boxes 缩放回原图坐标
+        # If the frame dimensions are different from the original image,
+        # scale the boxes back to the original coordinates
         if (frm_H, frm_W) != (orig_H, orig_W) and boxes is not None:
             boxes = self._rescale_boxes(boxes, (frm_H, frm_W), (orig_H, orig_W))
 
@@ -662,7 +673,7 @@ class Main(QtWidgets.QMainWindow):
             classes = classes[keep] if classes is not None else None
             masks = masks[keep] if masks is not None else None
 
-        # === 2. NMS ===
+        # === NMS ===
         # classwise (False=NMS；True=按类别NMS）
         if boxes is not None and scores is not None and len(boxes) > 0 and self.seg_nms_iou > 0:
             keep = _nms_keep_indices(boxes, scores, iou_thr=float(self.seg_nms_iou),
@@ -672,7 +683,7 @@ class Main(QtWidgets.QMainWindow):
             classes = classes[keep] if classes is not None else None
             masks = masks[keep] if masks is not None else None
 
-        # === 3. minimize size filter ===
+        # === minimize size filter ===
         if boxes is not None and len(boxes) > 0 and (self.seg_min_area > 0 ):
             m = _filter_by_min(boxes, min_area=float(self.seg_min_area), min_side=float(self.seg_min_side))
             boxes = boxes[m]
@@ -680,13 +691,13 @@ class Main(QtWidgets.QMainWindow):
             classes = classes[m] if classes is not None else None
             masks = masks[m] if masks is not None else None
 
-        # === 4. keep top-K instances ===
+        # === keep top-K instances ===
         if scores is not None and self.seg_top_k > 0:
-            # 1) 按分数排序（从高到低）
-            idx = scores.argsort()[::-1][:self.seg_top_k]    # 降序 → 取前 K
+            # Sort by score
+            idx = scores.argsort()[::-1][:self.seg_top_k]    # The descending order → takes the first K
 
 
-            # 2) 应用索引
+            # Application index
             boxes = boxes[idx]
             scores = scores[idx]
             classes = classes[idx] if classes is not None else None
@@ -729,26 +740,27 @@ class Main(QtWidgets.QMainWindow):
                     bw, bh = max(0, x2 - x1), max(0, y2 - y1)
 
                     if bw > 0 and bh > 0:
-                        # ROI 小 mask → bbox 尺寸（只做几何缩放，不二值化）
+                        # ROI small mask → bbox size
                         if m.ndim == 2 and (m.shape[0] != disp_H or m.shape[1] != disp_W):
                             m_roi = cv2.resize(m.astype(np.float32), (bw, bh),
                                                interpolation=cv2.INTER_NEAREST)
                             full[y1:y2, x1:x2] = m_roi
                         else:
-                            # 已经是整图 soft mask
+                            # It's already a soft mask
                             full = m.astype(np.float32)
                     else:
-                        # bbox 异常：退化为整图
+                        # bbox exception: degenerate to the whole graph
                         full = m.astype(np.float32)
                 else:
-                    # 无 bbox：若已整图就用；否则整体拉到整图
+                    # No bbox: if the whole picture is used;
+                    # Otherwise, pull the whole graph
                     if m.ndim == 2 and m.shape[:2] == (disp_H, disp_W):
                         full = m.astype(np.float32)
                     else:
                         full = cv2.resize(m.astype(np.float32), (disp_W, disp_H),
                                           interpolation=cv2.INTER_NEAREST)
 
-                # === 统一阈值二值化 ===
+                # Uniform threshold binarization
                 full_bin = (full > mask_thr).astype(np.uint8) * 255
                 canvas_list.append(full_bin)
 
@@ -762,8 +774,8 @@ class Main(QtWidgets.QMainWindow):
             "boxes": boxes,
             "scores": scores,
             "classes": classes,
-            "masks": masks_full,  # 整图mask（编辑/展示/导出复用）
-            "masks_disp": masks_full,  # 保留键名以兼容Brush，不再生成独立版本
+            "masks": masks_full,  # Whole image mask
+            "masks_disp": masks_full,  # Keep the key name for compatibility with Brush
             "disp_size": (disp_H, disp_W),
         }
 
@@ -910,8 +922,8 @@ class Main(QtWidgets.QMainWindow):
     # --------------- json annotation -------------
     def _serialize_pred_to_json(self) -> dict:
         """
-        将 self.last_pred 标准化为一个可 JSON 序列化的 dict。
-        要求：在 _run_seg() 之后，last_pred = {"frame","boxes","scores","classes","masks"}.
+        Normalize self.last_pred to a JSON serializable dict.
+        Requirement: in _run_seg (), last_pred = {" frame ", "boxes", "scores", "classes", "masks"}.
         """
         import numpy as np
         import cv2
@@ -925,10 +937,10 @@ class Main(QtWidgets.QMainWindow):
         classes = self.last_pred.get("classes", None)
         masks = self.last_pred.get("masks", None)
 
-        # 类别名（可选）
+        # Class name
         id2name = None
         if hasattr(self, "seg_seg") and hasattr(self.seg_seg, "class_names"):
-            # 期望：list[str] 或 dict[int,str]
+            # list[str] 或 dict[int,str]
             cn = self.seg_seg.class_names
             if isinstance(cn, dict):
                 id2name = {int(k): str(v) for k, v in cn.items()}
@@ -950,11 +962,11 @@ class Main(QtWidgets.QMainWindow):
             if id2name is not None and lb is not None and lb in id2name:
                 item["label_name"] = id2name[lb]
 
-            # ---- 可选：从实例 mask 提取 polygon（单外轮廓）----
+            # Extract polygon from the instance mask
             if masks is not None and len(masks) > i and masks[i] is not None:
                 m = (masks[i] > 0).astype(np.uint8)
                 cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                # 合并所有外轮廓为一个多边形数组（COCO 通常允许多个），这里存第一条也可
+                # Merge all outer contours into a polygon array
                 polys = []
                 for c in cnts:
                     pts = c.reshape(-1, 2)
@@ -973,12 +985,12 @@ class Main(QtWidgets.QMainWindow):
 
     def _save_masks_png_only(self):
         """
-        只导出当前 Seg 结果的 mask PNG：
-        - 每个实例一张二值 PNG（整图大小，0/255），命名：mask_{idx:03d}_{cls或name}.png
-        - 另外导出 merged_mask.png（所有实例并集）
+        Only the mask PNG of the current Seg result is exported:
+        - One binary PNG per instance (full size, 0/255), named mask_{idx:03d}_{cls or name}.png
+        - Additionally export merged_mask.png (union of all instances)
         """
         if self.last_pred is None or self.last_mode != "seg":
-            QtWidgets.QMessageBox.information(self, "Export Mask (PNG)", "请先运行 Seg。")
+            QtWidgets.QMessageBox.information(self, "Export Mask (PNG)", "please run Seg first.")
             return
 
         masks = self.last_pred.get("masks", None)
@@ -994,7 +1006,7 @@ class Main(QtWidgets.QMainWindow):
 
         H, W = self.last_img.shape[:2]
 
-        # 类别名（可选，仅用于文件名）
+        # class name
         id2name = None
         if hasattr(self, "seg_seg") and hasattr(self.seg_seg, "class_names"):
             cn = self.seg_seg.class_names
@@ -1005,11 +1017,9 @@ class Main(QtWidgets.QMainWindow):
 
         def _full_binary(m, box):
             m = np.asarray(m)
-            #如果已经是整图大小 -> 直接用
             if m.ndim >= 2 and m.shape[-2:] == (H, W):
                 full = m
             else:
-                # 仍然是 ROI mask（比如 28x28）时，才用 box 贴回整图
                 full = self._mask_to_fullsize(m, box, (H, W))
             return (full > 0).astype(np.uint8) * 255
 
@@ -1036,9 +1046,9 @@ class Main(QtWidgets.QMainWindow):
 
     def _save_masks_json_only(self):
         """
-        只导出当前 Seg 结果的 mask JSON（不写 PNG 文件）：
+        Export only the mask JSON of the current Seg result (not the PNG file) :
         - masks_meta.json: { image_path, image_size, objects:[{id,label_id,label_name?,bbox_xyxy,mask:polygon}] }
-        - mask 以外轮廓 polygon 表达（可能多条）
+        - mask outline polygon representation (may be multiple)
         """
         import os, json, cv2, numpy as np
 
@@ -1059,7 +1069,7 @@ class Main(QtWidgets.QMainWindow):
 
         H, W = self.last_img.shape[:2]
 
-        # 类别名（可选）
+        # class name
         id2name = None
         if hasattr(self, "seg_seg") and hasattr(self.seg_seg, "class_names"):
             cn = self.seg_seg.class_names
@@ -1070,11 +1080,11 @@ class Main(QtWidgets.QMainWindow):
 
         def _full_binary(m, box):
             m = np.asarray(m)
-            #如果已经是整图大小 -> 直接用
+
             if m.ndim >= 2 and m.shape[-2:] == (H, W):
                 full = m
             else:
-                # 仍然是 ROI mask（比如 28x28）时，才用 box 贴回整图
+
                 full = self._mask_to_fullsize(m, box, (H, W))
             return (full > 0).astype(np.uint8) * 255
 
@@ -1086,7 +1096,7 @@ class Main(QtWidgets.QMainWindow):
             b = boxes[i] if boxes is not None and i < len(boxes) else None
             full = _full_binary(m, b)
 
-            # 多边形（外轮廓）
+            # polygon
             cnts, _ = cv2.findContours((full > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             polys = []
             for c in cnts:
@@ -1130,10 +1140,10 @@ class Main(QtWidgets.QMainWindow):
             json.dump(jd, f, ensure_ascii=False, indent=2)
 
         self.append_log(f"[Export] mask JSON saved: {save_path}")
-        QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", f"已导出：\n{save_path}")
+        QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", f"Already exported: \n{save_path}")
 
     def _on_ec_finished_show_only(self, result=None):
-        """EdgeCluster 完成：仅预览，并把保存动作交给现有的“保存按钮”."""
+        """EdgeCluster is done: preview only, and hand the save action over to the existing "Save button"."""
         import os, cv2, glob, shutil
         try:
             if hasattr(self, "_ec_progress") and self._ec_progress:
@@ -1142,7 +1152,7 @@ class Main(QtWidgets.QMainWindow):
             ctx = getattr(self, "_ec_ctx", {}) or {}
             temp_out, temp_lab = ctx.get("temp_out"), ctx.get("temp_lab")
 
-            # 1) 选一张可预览的结果图
+            # Choose a previewable result
             preview_path = None
             if temp_out and os.path.isdir(temp_out):
                 cand = []
@@ -1151,7 +1161,7 @@ class Main(QtWidgets.QMainWindow):
                 if cand:
                     preview_path = sorted(cand)[0]
 
-            # 2) 预览展示
+            # preview
             if preview_path and os.path.isfile(preview_path):
                 img = cv2.imread(preview_path)
                 if img is not None:
@@ -1162,14 +1172,14 @@ class Main(QtWidgets.QMainWindow):
             else:
                 self.append_log("[EdgeCluster] No preview file found.")
 
-            # 3) 与 seg/surv 同步：更新状态并启用保存按钮
+            # Sync with seg/surv: Update the state and enable the save button
             self.last_pred = {"edge_preview": preview_path}
             self.last_mode = "edge"
-            self.btn_save.setEnabled(True)  # 现在用户点击“保存”就会走 _save_overlay
+            self.btn_save.setEnabled(True)  # Now when the user clicks "Save" it will go to _save_overlay
 
 
         finally:
-            # 4) 清理临时资源（不落地结果目录）
+            # Clearing temporary resources
             ctx = getattr(self, "_ec_ctx", {}) or {}
             try:
                 ti = ctx.get("temp_input")
@@ -1187,12 +1197,12 @@ class Main(QtWidgets.QMainWindow):
             self._ec_ctx = {}
 
     def _on_ec_failed_cleanup(self, err_msg: str):
-        """EdgeCluster 失败时的清理，与 seg/surv 一致的 UX：只提示，不弹保存。"""
+        """Cleaning up when EdgeCluster fails, UX consistent with seg/surv: hints only, no saves."""
         if hasattr(self, "_ec_progress") and self._ec_progress:
             self._ec_progress.close()
         QtWidgets.QMessageBox.critical(self, "Edge clustering failed", str(err_msg))
 
-        # 清理临时
+        # Clean up temporary
         ctx = getattr(self, "_ec_ctx", {}) or {}
         import os, shutil
         try:
@@ -1217,7 +1227,7 @@ class Main(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.information(self, "No image", "Please select an image first.")
             return
 
-        # 读取参数
+        # Reading parameters
         params = EdgeClusterParams(
             canny_low=int(self.spin_ec_canny_low.value()),
             canny_high=int(self.spin_ec_canny_high.value()),
@@ -1227,7 +1237,6 @@ class Main(QtWidgets.QMainWindow):
             morph_kernel=int(self.spin_ec_kernel.value()),
         )
 
-        # ★ 强制以处理图为输入写临时文件
         img_proc = self._apply_adjust_for_processing(self.last_img)
 
         self._ec_ctx = {"temp_input": None, "temp_out": None, "temp_lab": None}
@@ -1238,27 +1247,27 @@ class Main(QtWidgets.QMainWindow):
         self._ec_ctx["temp_input"] = temp_in
 
 
-        # 临时目录（仅用于预览，预览后清理）
+        # Temporary directory
         import tempfile as _tf
         temp_out = _tf.mkdtemp(prefix="ec_out_")
         temp_lab = _tf.mkdtemp(prefix="ec_lab_")
         self._ec_ctx["temp_out"] = temp_out
         self._ec_ctx["temp_lab"] = temp_lab
 
-        # 3) 进度框
+        # Progress box
         self._ec_progress = QtWidgets.QProgressDialog("Processing…", "Cancel", 0, 0, self)
         self._ec_progress.setWindowModality(QtCore.Qt.WindowModality.ApplicationModal)
         self._ec_progress.setMinimumDuration(0)
         self._ec_progress.show()
 
-        # 4) 线程与 worker（只处理这一张）
+        # Threads and Workers
         self._ec_thread = QtCore.QThread(self)
         self._ec_worker = EdgeClusterWorker(input_path, temp_out, temp_lab, params)
         self._ec_worker.moveToThread(self._ec_thread)
 
         self._ec_thread.started.connect(self._ec_worker.run)
         self._ec_worker.progressed.connect(self._on_ec_progress)
-        self._ec_worker.finished.connect(self._on_ec_finished_show_only)  # 只展示，不询问保存
+        self._ec_worker.finished.connect(self._on_ec_finished_show_only)  # Show, don't ask to save
         self._ec_worker.failed.connect(self._on_ec_failed_cleanup)
         self._ec_progress.canceled.connect(self._ec_worker.cancel)
 
@@ -1273,7 +1282,7 @@ class Main(QtWidgets.QMainWindow):
         if hasattr(self, "_ec_progress") and self._ec_progress:
             self._ec_progress.close()
         QtWidgets.QMessageBox.critical(self, "Edge clustering failed", str(err_msg))
-        # 清理
+        # clear
         ctx = getattr(self, "_ec_ctx", {}) or {}
         import os, shutil
         try:
@@ -1338,7 +1347,7 @@ class Main(QtWidgets.QMainWindow):
 
         self.append_log(f"[Images] Removed {len(items)} item(s).")
 
-        # === 如果当前显示的图像路径已被删除，则清空显示 ===
+        # If the current displayed image path has been deleted, clear the display
         if getattr(self, "last_img_path", None) in removed_paths:
             self._reset_current_image_state()
 
@@ -1352,10 +1361,11 @@ class Main(QtWidgets.QMainWindow):
 
 
     def _reset_current_image_state(self):
-        # 清空显示
+        # Clear the display
         try:
             if hasattr(self, "image_label") and self.image_label is not None:
-                # 如果 ZoomableLabel 有自定义清除方法，优先用；否则用 clear()
+                # If ZoomableLabel has a custom cleanup method, it is preferred.
+                # Otherwise use clear().
                 if hasattr(self.image_label, "set_zoom_pixmap"):
                     self.image_label.set_zoom_pixmap(QtGui.QPixmap(), reset=True)
                 else:
@@ -1363,7 +1373,7 @@ class Main(QtWidgets.QMainWindow):
         except Exception:
             pass
 
-        # 清空缓存&状态
+        # Clear the cache & state
         self._pixmap_ref = None
         self._preview_override = None
 
@@ -1372,7 +1382,7 @@ class Main(QtWidgets.QMainWindow):
         self.last_pred = None
         self.last_mode = None
 
-        # 禁用相关按钮&信息
+        # Disable related buttons & information
         if hasattr(self, "btn_save"): self.btn_save.setEnabled(False)
         self._update_run_buttons()
         if hasattr(self, "hist_widget"): self.hist_widget.set_hist(None)
@@ -1399,7 +1409,7 @@ class Main(QtWidgets.QMainWindow):
 
     def _focus_stack_selected(self, method: str = "sobel"):
         """
-        与 seg/surv 保持一致的交互：计算 -> 预览 -> 启用“保存”按钮（不在此处弹保存对话框）
+        Consistent interaction with seg/surv: Calculate -> Preview -> Enable Save button (no save dialog box here)
         method: "sobel" | "max" | "mean"
         """
         items = self.list_images.selectedItems() if hasattr(self, "list_images") else []
@@ -1416,10 +1426,10 @@ class Main(QtWidgets.QMainWindow):
                 composite_full, idx_map, sharp_stack = focus_stack_sobel(paths)
                 extra_info = {"stack_idx": idx_map, "sharp_stack_shape": getattr(sharp_stack, "shape", None)}
                 tag = "Sobel"
-                preview8 = composite_full  # sobel 本身是拷贝原像素，通常已是 uint8/可直接预览
+                preview8 = composite_full  # sobel itself copies the original pixel, which is usually already uint8/ directly previewable
 
             else:
-                # stack: (N,H,W) or (N,H,W,3), dtype 可能是 uint8/uint16
+                # stack: (N,H,W) or (N,H,W,3), dtype may is uint8/uint16
                 stack = self._load_image_stack_same_size(paths)
                 out_dtype = stack.dtype
                 out_max = np.iinfo(out_dtype).max if np.issubdtype(out_dtype, np.integer) else None
@@ -1433,29 +1443,29 @@ class Main(QtWidgets.QMainWindow):
                 else:
                     raise ValueError(f"Unknown method: {method}")
 
-                # === full 输出：保持原位深（用于保存）===
+                # Stay in place deep, for saving
                 if out_max is not None:
                     composite_f = np.clip(composite_f, 0, out_max)
                     composite_full = np.rint(composite_f).astype(out_dtype)
-                    # === 8bit 预览：正确缩放 ===
+                    # 8 bit
                     preview8 = (composite_f / out_max * 255.0).astype(np.uint8)
                 else:
                     composite_full = composite_f.astype(out_dtype)
                     mn, mx = composite_f.min(), composite_f.max()
                     preview8 = ((composite_f - mn) / (mx - mn + 1e-6) * 255.0).astype(np.uint8)
 
-            # 3) UI 预览永远走 uint8
+            # 3) UI preview always uint8
             if preview8.ndim == 2:
                 comp_bgr_preview = cv2.cvtColor(preview8, cv2.COLOR_GRAY2BGR)
             else:
-                comp_bgr_preview = preview8  # 已是 uint8
+                comp_bgr_preview = preview8
 
             self.show_image(comp_bgr_preview)
 
-            # 4) 缓存：full 用于 Save，preview 用于 UI
+
             self.last_pred = {
-                "projection_preview": comp_bgr_preview,  # uint8 预览
-                "projection_full": composite_full,  # 原位深结果
+                "projection_preview": comp_bgr_preview,  # uint8
+                "projection_full": composite_full,
                 "method": method,
                 **extra_info
             }
@@ -1468,7 +1478,7 @@ class Main(QtWidgets.QMainWindow):
             QtWidgets.QMessageBox.critical(self, "Projection", f"Failed:\n{e}")
             return
 
-    # ======== 辅助函数：读入并校验尺寸一致 ========
+    # Read in and check for size consistency
     def _load_image_stack_same_size(self, paths):
         imgs = []
         H = W = None
@@ -1487,7 +1497,7 @@ class Main(QtWidgets.QMainWindow):
 
     def _mean_to_dtype(self, stack: np.ndarray) -> np.ndarray:
         """
-        对 (N,H,W[,C]) 求均值，并安全地转换回原始 dtype（uint8/uint16/float）。
+        Mean (N,H,W[,C]) and safely convert back to the original dtype (uint8/uint16/float).
         """
         orig_dtype = stack.dtype
         mean_f = stack.astype(np.float32).mean(axis=0)  # (H,W[,C])
@@ -1501,27 +1511,27 @@ class Main(QtWidgets.QMainWindow):
     def _on_image_adjust(self, *_):
         if self.last_img is None:
             return
-        # 从 slider 取参数
+        # Take the parameters from slider
         brightness = self.slider_brightness.value()  # -100 ~ 100
         contrast = self.slider_contrast.value() / 100.0  # 0.1 ~ 3.0
 
-        # 调整图像
+        # adjust image
         img = self.last_img.astype(np.float32)
         img = img * contrast + brightness
         img = np.clip(img, 0, 255).astype(np.uint8)
 
-        # 预览更新
+        # preview
         self.show_image(img)
         # self.text_log.append(f"[Adjust] brightness={brightness}, contrast={contrast:.2f}")
 
 
-    # —— 统一追加日志 ——
+    # Unified append log
     def append_log(self, text: str):
-        # 可用在任何地方：self.append_log("xxx")
+        # self.append_log("xxx")
         if self.info_window:
             self.info_window.append_log(text)
         else:
-            # 窗口未开时先缓存在内存（可选）
+            # Cache in memory when the window is not open
             self._log_buffer.append(text)
 
     def set_process_info(self, text: str):
@@ -1530,19 +1540,19 @@ class Main(QtWidgets.QMainWindow):
         if self.info_window:
             self.info_window.set_info(text)
 
-    # —— 打开/关闭独立信息窗 ——
+    # Open/close the independent information window
     def _toggle_info_window(self, checked: bool, force_show: bool=False):
         if checked or force_show:
             if self.info_window is None:
                 self.info_window = InfoWindow(parent=self)
-                # 把缓存日志刷进去
+                # Flush the cache logs in
                 if self._log_buffer:
                     self.info_window.append_log("\n".join(self._log_buffer))
                     self._log_buffer.clear()
-                # 当前 Process Info 文本也刷一次
+                # The current Process Info text is also brushed
                 if hasattr(self, "lab_count") and self.lab_count is not None:
                     self.info_window.set_info(self.lab_count.text())
-                # 关闭时同步取消勾选
+                # Uncheck sync when closed
                 self.info_window.destroyed.connect(self._on_info_window_closed)
             self.info_window.show()
             self.info_window.raise_()
@@ -1556,7 +1566,7 @@ class Main(QtWidgets.QMainWindow):
                 self.chk_info_window.setChecked(False)
 
     def _on_info_window_closed(self, *args):
-        # 窗口被用户手动关闭时，同步取消勾选
+        # When the window is closed manually by the user, the synchronization is unchecked
         self.info_window = None
         if hasattr(self, "chk_info_window"):
             self.chk_info_window.setChecked(False)
@@ -1579,37 +1589,34 @@ class Main(QtWidgets.QMainWindow):
         import cv2, numpy as np
         img = self.last_img
 
-        # 工作在 float32，按通道处理（BGR）
         x = img.astype(np.float32)
-        # 归一化到 0..1 的线性拉伸（先按阈截断）
         x = np.clip((x - b) / max(1.0, (w - b)), 0.0, 1.0)
-        # γ 校正
+        # γ adjust
         x = np.power(x, 1.0 / max(0.05, float(gamma)))
 
         out = (x * 255.0).clip(0,255).astype(np.uint8)
-        # 只用于展示（不覆盖 last_img 原图）
         self.show_image(out)
 
 
 
-    # ==== 预览覆盖：正在调色时锁住显示 ====
+    # Preview overlay: Lock the display while the color is being adjusted
     def _set_preview_override(self, img_bgr: np.ndarray):
-        """进入预览覆盖态：Display 只显示这个，不允许其它回调改画面。"""
+        """Enter the preview overlay mode: Display only displays this, no other callbacks are allowed to change the screen."""
         self._preview_override = img_bgr  # 只用于显示，不改 last_img
         self.show_image(img_bgr, reset_zoom=False)
         self._update_levels_histogram()
 
     def _clear_preview_override(self):
-        """退出预览覆盖态：恢复正常绘制（seg/surv 等可以刷新画面）"""
+        """Exit preview overlay mode: resume normal drawing (seg/surv can refresh the screen)"""
         self._preview_override = None
         self._update_levels_histogram()
 
     def _apply_adjust_for_processing(self, img_bgr):
         """
-        把 self._adj 中记录的调色参数一次性作用到原图，返回给模型/算法使用的图像。
-        - 输入:  img_bgr (np.uint8), BGR 或灰度
-        - 输出:  new_img (np.uint8), 同通道数
-        - 顺序:  Levels -> RGB增益 -> 亮度/对比度 -> Gamma -> 饱和度/色相
+        The color matching parameter recorded in self._adj is applied to the original image once and returned to the image used by the model/algorithm.
+        - Input: img_bgr (np.uint8), BGR or grayscale
+        - Output: new_img (np.uint8), same number of channels
+        - Order: Levels -> RGB Gain -> Brightness/Contrast -> Gamma -> Saturation/Hue
         """
         import numpy as np, cv2
 
@@ -1617,10 +1624,10 @@ class Main(QtWidgets.QMainWindow):
             return None
         x = img_bgr
 
-        # ---- 转 float32 便于计算 ----
+        # float32 is easy to compute
         x = x.astype(np.float32)
 
-        # 0) 读参数（容错：无 _adj 时给默认值）
+        # Reading parameters
         adj = getattr(self, "_adj", None) or {
             "bri": 0.0, "con": 1.0, "gamma": 1.0, "r": 1.0, "g": 1.0, "b": 1.0,
             "sat": 1.0, "hue": 0.0, "lvl_b": 0.0, "lvl_g": 1.0, "lvl_w": 255.0
@@ -1632,35 +1639,35 @@ class Main(QtWidgets.QMainWindow):
         g_g = float(adj.get("g", 1.0))
         b_g = float(adj.get("b", 1.0))
         sat = float(adj.get("sat", 1.0))
-        hue = float(adj.get("hue", 0.0))  # 单位：度
+        hue = float(adj.get("hue", 0.0))  # Unit: Degree
         lvl_b = float(adj.get("lvl_b", 0.0))
         lvl_g = float(adj.get("lvl_g", 1.0))
         lvl_w = float(adj.get("lvl_w", 255.0))
 
-        # 1) Levels（先做线性拉伸，再做 gamma）
+        # Levels (linear stretch, gamma)
         #   x' = ((x - lvl_b) / (lvl_w - lvl_b))^ (1/lvl_g) * 255
         den = max(1.0, (lvl_w - lvl_b))  # 防零
         x = np.clip((x - lvl_b) / den, 0.0, 1.0)
-        x = np.power(x, 1.0 / max(0.05, lvl_g)) * 255.0  # 防极小
+        x = np.power(x, 1.0 / max(0.05, lvl_g)) * 255.0
 
-        # 2) RGB 增益（仅在三通道图生效，灰度图跳过）
+        # RGB gain (only applied to 3-channel images, skipped for grayscale images)
         if x.ndim == 3 and x.shape[2] == 3:
             # BGR 顺序
             x[..., 0] *= b_g
             x[..., 1] *= g_g
             x[..., 2] *= r_g
 
-        # 3) 亮度/对比度： x = x * con + bri
+        # Brightness/contrast: x = x * con + bri
         x = x * con + bri
 
-        # 4) 全局 Gamma（二次 gamma，可选）
+        # Global Gamma
         x = np.clip(x, 0, 255) / 255.0
         x = np.power(x, 1.0 / max(0.05, gma)) * 255.0
 
-        # 先裁剪回 0~255 再转回 uint8
+        # Crop back to 0-255 and back to uint8
         x = np.clip(x, 0, 255).astype(np.uint8)
 
-        # 5) 饱和度/色相（仅对三通道 BGR）
+        # Saturation/Hue
         if x.ndim == 3 and x.shape[2] == 3:
             hsv = cv2.cvtColor(x, cv2.COLOR_BGR2HSV).astype(np.float32)
             # OpenCV: H ∈ [0,179], S ∈ [0,255], V ∈ [0,255]
@@ -1670,29 +1677,25 @@ class Main(QtWidgets.QMainWindow):
 
         return x
 
-    # 色阶
+    # Color scale
     def _on_levels_changed_from_widget(self, b: int, g: float, w: int):
-        # 记录
+        # record
         self._adj["lvl_b"] = int(b)
         self._adj["lvl_g"] = float(g)
         self._adj["lvl_w"] = int(w)
 
-        # 预览（仅覆盖显示，不改 last_img）
+        # preview
         if getattr(self, "last_img", None) is not None:
             prev = self._apply_adjust_for_processing(self.last_img)
-            self._set_preview_override(prev)  # 你已有的方法：只换显示层
-            self._update_levels_histogram(from_preview=True)  # 直方图也跟着预览图更新
+            self._set_preview_override(prev)  # Just change the display layer
+            self._update_levels_histogram(from_preview=True)  # The histogram is also updated with the preview plot
 
 
-
-
-    # --- 显示display图的色阶bar图
-    # Main 类中添加：
     def _get_current_display_image(self):
         """
-        返回当前 display 上看的那张图：
-        - 如果有覆盖预览(self._preview_override)，优先用它（即调色后的图）
-        - 否则退回原图 self.last_img
+        Return the image currently viewed on the display:
+        - If there is an override (self._preview_override), use it first (i.e. the toned image)
+        - Otherwise, return to the original image self.last_img
         """
         if getattr(self, "_preview_override", None) is not None:
             return self._preview_override
@@ -1700,7 +1703,7 @@ class Main(QtWidgets.QMainWindow):
 
     def _update_levels_histogram(self, from_preview: bool = True):
         """
-        用“当前显示图像”更新色阶控件的直方图。
+        Update the histogram of the scale control with the Currently displayed image.
         """
         if not hasattr(self, "levels_widget"):
             return
@@ -1716,19 +1719,9 @@ class Main(QtWidgets.QMainWindow):
         else:
             gray = img
 
-        # 计算原始直方图（counts），喂给控件
+        # Compute the raw histogram (counts) and feed it to the control
         hist = cv2.calcHist([gray], [0], None, [256], [0, 256]).reshape(-1)
         self.levels_widget.set_histogram(hist)
-
-        # # 可选：1% / 99% 建议挡位
-        # cdf = hist.cumsum()
-        # if cdf[-1] > 0:
-        #     cdf = cdf / float(cdf[-1])
-        #     b_suggest = int(np.searchsorted(cdf, 0.01))
-        #     w_suggest = int(np.searchsorted(cdf, 0.99))
-        #     g_suggest = 1.0
-        #     # 只更新 UI，不触发回调（避免死循环）
-        #     self.levels_widget.set_levels(b_suggest, g_suggest, w_suggest, emit_signal=False)
 
     def _do_update_levels_histogram(self):
         if not hasattr(self, "levels_widget"):
@@ -1738,7 +1731,7 @@ class Main(QtWidgets.QMainWindow):
             self.levels_widget.clear_histogram()
             return
 
-        # 计算灰度直方图（尽量避免重复拷贝）
+        # Calculate the grayscale histogram
         import cv2, numpy as np
         if img.ndim == 3:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -1746,45 +1739,45 @@ class Main(QtWidgets.QMainWindow):
             gray = img
         hist = cv2.calcHist([gray], [0], None, [256], [0, 256]).reshape(-1)
 
-        # 静默喂给控件（控件内部也有 16ms debounce）
+        # Feed the control silently
         self.levels_widget.set_histogram(hist)
 
     def _on_toggle_edit_mode(self, checked: bool):
         self.edit_mode = bool(checked)
         if self.edit_mode:
-            # 提示：编辑只对 seg 结果有效
+            # Edits are only valid for seg results
             if self.last_mode != "seg" or self.last_pred is None:
-                self.append_log("[Edit] 请先运行分割（Seg），再开启编辑模式。")
-            # 改鼠标形状
+                self.append_log("[Edit] please run Seg first, then start edit mode.")
+            # Change the mouse shape
             self.image_label.setCursor(QtCore.Qt.CursorShape.CrossCursor)
         else:
             self.image_label.setCursor(QtCore.Qt.CursorShape.ArrowCursor)
 
 
-    #规范化函数
+    # Normalization function
     def _ensure_masks_NHW(self, masks_any, disp_size=None):
         """
-        把各种形状的掩码统一成 (N, H, W)，并确保 dtype=uint8 (0/255)。
-        支持：list/ndarray，单mask/多mask，(H,W)、(1,H,W)、(H,W,1)、(C,H,W)、(H,W,C) 等。
-        如果提供 disp_size=(H,W)，会在需要时用最近邻 resize。
+        Unify the shapes into (N, H, W) and make sure dtype=uint8 (0/255).
+        Support: the list/ndarray, single and mask mask, (H, W), (1, H, W), (H, W, 1), (C, H, W), (H, W, C), etc.
+        If disp_size=(H,W) is provided, nearest neighbor resize is used when needed.
         """
         import numpy as np, cv2
 
         if masks_any is None:
             return None
 
-        # 把输入变成 list
+        # Change the input to a list
         if isinstance(masks_any, np.ndarray):
-            # 可能是 (N, H, W) / (N,1,H,W) / (H,W) / (1,H,W)
+            # probably (N, H, W) / (N,1,H,W) / (H,W) / (1,H,W)
             if masks_any.ndim == 2:
                 masks_list = [masks_any]
             elif masks_any.ndim == 3:
-                # (N,H,W) 或 (H,W,C)
+                # (N,H,W) or (H,W,C)
                 if masks_any.shape[0] <= 4 and masks_any.shape[-1] not in (1, 3):  # 粗略判断是不是 (C,H,W)
-                    # 形如 (C,H,W) -> 拆成 C 个
+                    # The form is (C,H,W) -> C
                     masks_list = [masks_any[c, ...] for c in range(masks_any.shape[0])]
                 else:
-                    # (N,H,W) 直接拆
+                    # (N,H,W) Direct demolition
                     masks_list = [masks_any[i, ...] for i in range(masks_any.shape[0])]
             elif masks_any.ndim == 4:
                 # (N,1,H,W) / (N,H,W,1) / (N,C,H,W) / (N,H,W,C)
@@ -1792,26 +1785,26 @@ class Main(QtWidgets.QMainWindow):
                 masks_list = []
                 for i in range(N):
                     m = masks_any[i]
-                    # 去掉所有 size=1 的通道
+                    # All channels with size=1 are removed
                     m = np.squeeze(m)
                     masks_list.append(m)
             else:
-                # 其它情况直接返回
+                # Other cases simply return
                 return masks_any
         else:
-            # list：逐个 squeeze
+            # list: squeeze one by one
             masks_list = []
             for m in masks_any:
                 a = np.asarray(m)
                 a = np.squeeze(a)
                 masks_list.append(a)
 
-        # 统一到 (H,W) + uint8 0/255
+        # unify to (H,W) + uint8 0/255
         norm_list = []
         for m in masks_list:
             a = np.asarray(m)
             if a.ndim == 3:
-                # 若还有多通道，取任意非零（你也可以改成 a.max(axis=2)）
+                # If there are still multiple channels, take any nonzero
                 a = a.max(axis=-1)
             if a.dtype != np.uint8:
                 if np.issubdtype(a.dtype, np.floating):
@@ -1821,7 +1814,7 @@ class Main(QtWidgets.QMainWindow):
             else:
                 a = (a > 0).astype(np.uint8) * 255
 
-            # 需要的话 resize 到 disp_size
+            # resize to disp_size
             if disp_size is not None and a.shape[:2] != tuple(disp_size):
                 H, W = disp_size
                 a = cv2.resize(a, (W, H), interpolation=cv2.INTER_NEAREST)
@@ -1835,13 +1828,13 @@ class Main(QtWidgets.QMainWindow):
             return norm_list
 
 
-    # 点击选中
     def _on_image_click_select(self, ix: int, iy: int):
-        """点击显示区：按“到 bbox 的最近距离”选择实例；选中后仅高亮（不删除）。"""
+        """Click display area: press "nearest distance to bbox" to select the instance;
+            Highlight only (not remove) when selected."""
         if not self.edit_mode or self.last_mode != "seg" or self.last_pred is None:
             return
 
-        # 取显示尺寸，准备 masks_disp（命中调试备用）
+        # Take the display size and prepare masks_disp
         disp_size = self.last_pred.get("disp_size", self.last_img.shape[:2])
         masks_disp = self._ensure_masks_NHW(self.last_pred.get("masks_disp"), disp_size=disp_size)
         H, W = disp_size
@@ -1853,14 +1846,15 @@ class Main(QtWidgets.QMainWindow):
 
         sel = None
 
-        # ---- 基于 bbox 的“最近距离”选择 ----
+        # Selection of "closest distance" based on bbox
         if boxes is not None and len(boxes) > 0:
-            # 计算每个 bbox 到点击点的距离（矩形外欧氏距离；在框内则为 0）
+            # Calculate the distance between each bbox and the click point
             best_d = float("inf");
             best_i = None
 
             def _dist_point_to_rect(x, y, x1, y1, x2, y2):
-                # 若点在矩形内，dx=dy=0；否则到边的曼哈顿投影后算欧氏距离
+                # If the point is inside the rectangle, dx=dy=0;
+                # Otherwise the Euclidean distance is computed after the Manhattan projection to the edge
                 dx = 0.0 if x1 <= x <= x2 else (x1 - x if x < x1 else x - x2)
                 dy = 0.0 if y1 <= y <= y2 else (y1 - y if y < y1 else y - y2)
                 return math.hypot(dx, dy)
@@ -1868,7 +1862,7 @@ class Main(QtWidgets.QMainWindow):
             n = boxes.shape[0] if hasattr(boxes, "shape") else len(boxes)
             for i in range(n):
                 x1, y1, x2, y2 = map(float, boxes[i])
-                # 裁边以免负值干扰
+                # Trim edges so as not to interfere with negative values
                 x1 = max(0.0, min(float(W - 1), x1));
                 x2 = max(0.0, min(float(W - 1), x2))
                 y1 = max(0.0, min(float(H - 1), y1));
@@ -1876,7 +1870,7 @@ class Main(QtWidgets.QMainWindow):
                 if x2 < x1 or y2 < y1:
                     continue
                 d = _dist_point_to_rect(ix, iy, x1, y1, x2, y2)
-                # 如需“分数优先”可在距离相同情况下用分数破平
+                # If you want to "score first", you can break the tie with the score in the same distance
                 if d < best_d - 1e-6 or (abs(d - best_d) <= 1e-6 and scores is not None and i < len(
                         scores) and best_i is not None and i != best_i and float(scores[i]) > float(scores[best_i])):
                     best_d, best_i = d, i

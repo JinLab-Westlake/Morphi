@@ -2,10 +2,8 @@
 import onnxruntime as ort
 import numpy as np
 import cv2
-
-
-
 import matplotlib.cm as cm
+
 
 def resize_shortest_edge(img_bgr, min_size=800, max_size=1333):
     h, w = img_bgr.shape[:2]

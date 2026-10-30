@@ -22,12 +22,12 @@ class EdgeClusterWorker(QtCore.QObject):
             def cb(i, n, p, s): self.progressed.emit(i, n, p, s)
             def should_cancel(): return self._cancel
 
-            # 如果传入的是“文件路径”，则只处理这一张
+            # If a file path is passed, only that one is processed
             if os.path.isfile(self.folder):
                 process_one_image(self.folder, self.out_dir, self.lab_dir,
                                   self.params, progress_cb=cb)
             else:
-                # 否则按文件夹批处理
+                # otherwise batch process
                 process_folder(self.folder, self.out_dir, self.lab_dir,
                                self.params, progress_cb=cb, should_cancel=should_cancel)
 

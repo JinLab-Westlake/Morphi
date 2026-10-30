@@ -4,7 +4,7 @@ import os
 
 def _build_menubar(self):
     menubar = self.menuBar()
-    # macOS 上用原生菜单栏
+    # Use the native menu bar on macOS
     try:
         menubar.setNativeMenuBar(True)
     except Exception:
@@ -18,7 +18,7 @@ def _build_menubar(self):
     act_open_img.triggered.connect(self.choose_image)
     m_file.addAction(act_open_img)
 
-    # --- Open model (子菜单：Seg / Surv) ---
+    # --- Open model (Submenu: Seg / Surv) ---
     m_open_model = m_file.addMenu("Open Model")
     act_open_seg = QtGui.QAction("Segmentation Model…", self)
     act_open_seg.triggered.connect(lambda: self._add_model_from_file("seg"))
@@ -70,7 +70,7 @@ def _pick_output_dir(main):
         main.seg_output_dir = d
         if hasattr(main, "settings"):
             main.settings.setValue("param/output_dir", d)
-        # 如果左侧有编辑框：同步显示
+        # If there is an edit box on the left: Display synchronously
         if hasattr(main, "edit_outdir") and main.edit_outdir is not None:
             main.edit_outdir.setText(d)
 
@@ -80,7 +80,7 @@ def _add_recent_image(self, path: str, key="recent/images", max_items=10):
     if not hasattr(self, "settings"):
         return
     items = self.settings.value(key, [], type=list) or []
-    # 去重，把最新的放最前
+    # Remove duplicates and put the latest ones first
     items = [p for p in items if p != path]
     items.insert(0, path)
     items = items[:max_items]

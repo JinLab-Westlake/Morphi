@@ -119,8 +119,15 @@ cd Morphi</code></pre>
 </p>
 
 <p>
-  The trained model weights are available for download from
-  <a href="YOUR_URL" target="_blank">Morphi-checkpoints</a>.
+  Pretrained model weights <a href="URL" target="_blank">DoANet checkpoints</a> and   <a href="URL" target="_blank">Instance-segmentation checkpoints</a> are hosted on Hugging Face and will be downloaded automatically when the model is loaded for the first time.
+</p>
+
+<pre><code class="language-python">from package import load_model
+model = load_model("large")
+</code></pre>
+
+<p>
+The downloaded checkpoints are cached locally by huggingface_hub, so subsequent runs do not require downloading the model again.
 </p>
 
 <p>
