@@ -1877,7 +1877,7 @@ class Main(QtWidgets.QMainWindow):
 
             sel = best_i
 
-        # ---- 兜底：若没有 boxes（极少数情况），再尝试 mask 命中 ----
+        # If there are no boxes, then mask hits
         if sel is None and masks_disp is not None:
             if isinstance(masks_disp, np.ndarray):
                 for i in range(masks_disp.shape[0]):
@@ -1890,18 +1890,18 @@ class Main(QtWidgets.QMainWindow):
                         sel = i;
                         break
 
-        # 结果处理
+        # Result processing
         if sel is None:
             self._selected_inst = None
-            self.set_process_info("Process Info (Seg): 未命中任何实例")
+            self.set_process_info("Process Info (Seg): No instance was hit")
             self._render_overlay_with_selection(None)
             return
 
         self._selected_inst = int(sel)
-        self.set_process_info(f"Process Info (Seg): 选中实例 #{sel}")
+        self.set_process_info(f"Process Info (Seg): Select the instance #{sel}")
         self._render_overlay_with_selection(sel)
 
-        # 抢回主窗焦点，确保 Delete 被 keyPressEvent 接收
+        # Grab the main window focus back and ensure that Delete is received by the keyPressEvent
         self.setFocus(QtCore.Qt.FocusReason.ActiveWindowFocusReason)
 
     def _render_overlay_with_selection(self, sel_idx: Optional[int]):
@@ -1914,14 +1914,13 @@ class Main(QtWidgets.QMainWindow):
         alp = self.slider_alpha.value() / 100.0 if hasattr(self, "slider_alpha") else 0.5
         score_thr = float(self.seg_score_thr) if hasattr(self, "seg_score_thr") else 0.0
 
-        # 先按原逻辑渲染（可能自带绿色框）
         overlay = draw_overlay(self.last_img, frame, boxes, scores, classes, masks,
                                score_thr=score_thr, alpha=alp, draw_box=False)
 
         if sel_idx is not None:
             H, W = self.last_img.shape[:2]
 
-            # ① 若有 mask，叠加黄色半透明以示高亮
+            # If mask is available, overlay yellow translucence to highlight
             masks_disp = self._ensure_masks_NHW(self.last_pred.get("masks_disp"),
                                                 disp_size=self.last_pred.get("disp_size", (H, W)))
             if isinstance(masks_disp, np.ndarray) and 0 <= sel_idx < masks_disp.shape[0]:
@@ -1929,14 +1928,14 @@ class Main(QtWidgets.QMainWindow):
                 if np.any(m):
                     cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                     if cnts:
-                        cv2.drawContours(overlay, cnts, -1, (0, 255, 255), 3)  # 黄框
-                    # 半透明黄填充，强化区别
+                        cv2.drawContours(overlay, cnts, -1, (0, 255, 255), 3)  # yellow box
+                    # Translucent yellow fill to enhance distinction
                     overlay[m.astype(bool)] = (
                             overlay[m.astype(bool)].astype(np.float32) * 0.70
                             + np.array([0, 255, 255], dtype=np.float32) * 0.30
                     ).astype(np.uint8)
 
-            # 不管有没有 mask，都在 bbox 上再画一次“黄色矩形”覆盖原先的绿框
+            # With or without mask, draw another "yellow rectangle" over the original green box on the bbox
             if boxes is not None and 0 <= sel_idx < (boxes.shape[0] if hasattr(boxes, "shape") else len(boxes)):
                 x1, y1, x2, y2 = [int(round(v)) for v in boxes[sel_idx]]
                 x1 = max(0, min(W - 1, x1));
@@ -1944,14 +1943,15 @@ class Main(QtWidgets.QMainWindow):
                 y1 = max(0, min(H - 1, y1));
                 y2 = max(0, min(H - 1, y2))
                 if x2 > x1 and y2 > y1:
-                    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 255), 3)  # 黄框覆盖
+                    cv2.rectangle(overlay, (x1, y1), (x2, y2), (0, 255, 255), 3)  # cover by yellow box
 
         self.show_image(overlay, reset_zoom=False)
 
 
-    # 删除选中实例
+    # delete selected instance
     def keyPressEvent(self, e: QtGui.QKeyEvent):
-        """Delete/Backspace 删除当前选中实例；Esc 取消选中。"""
+        """Delete/Backspace Deletes the currently selected instance.
+            Esc Deselected."""
         if e.key() in (QtCore.Qt.Key.Key_Delete, QtCore.Qt.Key.Key_Backspace):
             self._delete_selected_instance()
             return
@@ -1963,9 +1963,9 @@ class Main(QtWidgets.QMainWindow):
             return
         super().keyPressEvent(e)
 
-    # 从后端删除annotation记录
+    # Remove annotation records from the backend
     def _delete_selected_instance(self):
-        """真正执行删除，并重绘。"""
+        """Actually delete and repaint"""
         if self._selected_inst is None or self.last_mode != "seg" or self.last_pred is None:
             return
 
@@ -1994,9 +1994,9 @@ class Main(QtWidgets.QMainWindow):
         self.append_log(f"[Edit] already deleted instance, remain {n_now}")
 
 
-    # box 统一放大回原图坐标
+    # The box is uniformly zoomed back to the original coordinates
     def _rescale_boxes(self, boxes, from_hw, to_hw):
-        """boxes: (N,4) [x1,y1,x2,y2]，把从 from_hw(H,W) 坐标系缩放到 to_hw(H,W)。"""
+        """boxes: (N,4) [x1,y1,x2,y2], scaling from from_hw(H,W) to to_hw(H,W)"""
         if boxes is None:
             return None
         if hasattr(boxes, "shape"):
@@ -2006,7 +2006,7 @@ class Main(QtWidgets.QMainWindow):
 
         H0, W0 = from_hw
         H1, W1 = to_hw
-        if H0 == 0 or W0 == 0:  # 保险
+        if H0 == 0 or W0 == 0:
             return b
 
         sx = float(W1) / float(W0)
@@ -2025,7 +2025,7 @@ class Main(QtWidgets.QMainWindow):
         scores = self.last_pred.get("scores", None)
         classes= self.last_pred.get("classes", None)
 
-        # 类别名（可选）
+        # Class name
         id2name = None
         if hasattr(self, "seg_seg") and hasattr(self.seg_seg, "class_names"):
             cn = self.seg_seg.class_names
@@ -2037,11 +2037,11 @@ class Main(QtWidgets.QMainWindow):
         dlg = LabelEditorDialog(self, boxes, scores, classes, id2name=id2name)
         if dlg.exec() == QtWidgets.QDialog.DialogCode.Accepted:
             new_ids, _ = dlg.get_labels()
-            # 回写到 last_pred
+            # write back to last_pred
             if classes is not None and len(new_ids) == len(classes):
                 self.last_pred["classes"] = np.asarray(new_ids, dtype=classes.dtype if hasattr(classes, "dtype") else np.int32)
 
-                # 刷新显示（根据新 label 重绘一次）
+                # refresh
                 alp = self.slider_alpha.value() / 100.0 if hasattr(self, "slider_alpha") else 0.5
                 score_thr = float(self.seg_score_thr) if hasattr(self, "seg_score_thr") else 0.0
                 overlay = draw_overlay(
@@ -2066,39 +2066,24 @@ class Main(QtWidgets.QMainWindow):
         return True
 
     def _on_toggle_brush(self, checked: bool):
-        # 切换 ZoomableLabel 的模式；编辑 & 画笔可同时存在，但交互优先画笔
+        # Toggle the ZoomableLabel mode. Edit & Brush can coexist, but interaction takes precedence over brush
         self.image_label.brush_mode = bool(checked)
         if checked:
             if not self._ensure_brush_buffer():
                 self.chk_brush.setChecked(False)
                 return
-            self.append_log("[Brush] 画笔已开启：左键绘制，Alt/右键擦除；中键可平移。")
+            self.append_log("[Brush] The brush is enabled: left click to draw, Alt/ right click to erase; The middle key can be translated.")
         else:
-            self.append_log("[Brush] 画笔已关闭。")
+            self.append_log("[Brush] The brush already closed")
         self._on_brush_preview_refresh()
 
-    # def _on_brush_point(self, ix: int, iy: int, is_erasing: bool):
-    #     """收到一枚图像坐标点，按画笔半径在 _brush_mask 上画/擦。"""
-    #     if not self._ensure_brush_buffer():
-    #         return
-    #     r = max(1, int(self.slider_brush.value()) if hasattr(self, "slider_brush") else 12)
-    #     if is_erasing:
-    #         # 擦除就画黑色实心圆
-    #         cv2.circle(self._brush_mask, (ix, iy), r, 0, thickness=-1, lineType=cv2.LINE_8)
-    #     else:
-    #         # 绘制就画白色实心圆
-    #         cv2.circle(self._brush_mask, (ix, iy), r, 255, thickness=-1, lineType=cv2.LINE_8)
-    #
-    #     self._on_brush_preview_refresh()
-
     def _on_brush_preview_refresh(self, *_):
-        """把画笔层以半透明叠加到当前显示（仅预览，不改 last_img/last_pred）。"""
+        """Overlay the brush layer semi-transparently on the current display (preview only, don't change last_img/last_pred)."""
         if self.last_img is None:
             return
-        # 基底：当前模式下的 overlay（如果有seg/surv结果按你现有逻辑重绘一次）
+        # Base: overlay in current mode
         base = self.last_img.copy()
         if self.last_pred is not None:
-            # 复用你已有的“基于 last_pred 重绘”逻辑（这里给出最简单的：seg 时重画一次）
             if self.last_mode == "seg":
                 alp = self.slider_alpha.value()/100.0 if hasattr(self, "slider_alpha") else 0.5
                 score_thr = float(self.seg_score_thr) if hasattr(self, "seg_score_thr") else 0.0
@@ -2111,17 +2096,16 @@ class Main(QtWidgets.QMainWindow):
                                     score_thr=score_thr, alpha=alp, draw_box=False)
 
             elif self.last_mode == "surv":
-                # 简化：直接使用 _on_params_changed 的那一套重画也可以
                 pass
 
         if self._brush_mask is not None:
-            # 半透明青色叠加画笔层
+            # Translucent cyan overlay brush layer
             alpha = float(self._brush_preview_alpha)
             idx = self._brush_mask > 0
             if np.any(idx):
                 base[idx] = (base[idx].astype(np.float32) * (1 - alpha) +
                              np.array([255, 200, 0], dtype=np.float32) * alpha).astype(np.uint8)
-                # 可选：描边
+                # Optional: Stroke
                 cnts, _ = cv2.findContours((self._brush_mask>0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 for c in cnts:
                     cv2.drawContours(base, [c], -1, (255, 200, 0), 2)
@@ -2132,36 +2116,36 @@ class Main(QtWidgets.QMainWindow):
         if self._brush_mask is not None:
             self._brush_mask.fill(0)
             self._on_brush_preview_refresh()
-            self.append_log("[Brush] 画笔层已清空。")
+            self.append_log("[Brush] The brush layer has been emptied.")
 
 
-    # 提交绘制的实例
+
     def _on_brush_commit(self):
         if self.last_mode != "seg":
-            self.append_log("[Brush] 仅在 Seg 模式下可提交。")
+            self.append_log("[Brush] Commit only in Seg mode.")
             return
         if getattr(self, "_brush_mask_full", None) is None:
-            self.append_log("[Brush] 当前没有可提交的画笔掩码。")
+            self.append_log("[Brush] There are currently no brush masks available for submission.")
             return
 
         H, W = self.last_img.shape[:2]
         target_hw = (H, W)
 
-        # 取旧字段
+        # Fetching the old field
         old_masks = self.last_pred.get("masks", None)
         old_boxes = self.last_pred.get("boxes", None)
         old_scores = self.last_pred.get("scores", None)
         old_cls = self.last_pred.get("classes", None)
 
-        # 先把旧的所有 mask 统一成整图 (H,W)
+        # Unify all the old masks into a whole graph (H,W)
         full_list = []
         if old_masks is not None:
             if isinstance(old_masks, np.ndarray) and old_masks.ndim == 3 and old_masks.shape[1:] == (H, W):
-                # 已经是 (N,H,W) 的整图
+                # It's already the full graph of N,H,W
                 for i in range(old_masks.shape[0]):
                     full_list.append((old_masks[i] > 0).astype(np.uint8) * 255)
             else:
-                # 可能是 list 或 ROI 大小
+                # It could be the list or ROI size
                 N = len(old_masks) if isinstance(old_masks, (list, tuple)) else (
                     old_masks.shape[0] if hasattr(old_masks, "shape") else 0)
                 for i in range(N):
@@ -2171,17 +2155,17 @@ class Main(QtWidgets.QMainWindow):
                         b = old_boxes[i]
                     full_list.append(self._mask_to_fullsize(m, b, target_hw))
 
-        # 追加新画笔实例（确保也是整图大小）
+        # Append a new brush instance
         brush_full = (self._brush_mask_full > 0).astype(np.uint8) * 255
         full_list.append(brush_full)
 
-        # 尝试 stack 成 (N,H,W)
+        # Try to stack (N,H,W).
         masks_full = np.stack(full_list, axis=0) if full_list else None
 
-        # 统一后重算 boxes
+        # Recompute the boxes after unification
         boxes_new = self._recompute_boxes_from_full_masks(masks_full) if masks_full is not None else None
 
-        # 补齐 scores / classes
+        # Complete scores/classes
         N_old = 0 if old_boxes is None else (old_boxes.shape[0] if hasattr(old_boxes, "shape") else len(old_boxes))
         score_brush = 1.0
         cls_brush = int(getattr(self, "_brush_class_id", 0))
@@ -2198,20 +2182,20 @@ class Main(QtWidgets.QMainWindow):
             classes_new = np.concatenate([np.asarray(old_cls).astype(np.int32),
                                           np.array([cls_brush], dtype=np.int32)], axis=0)
 
-        # 更新 last_pred
+        # refresh last_pred
         self.last_pred["masks"] = masks_full  # (N,H,W) uint8
         self.last_pred["boxes"] = boxes_new  # (N,4) float32
         self.last_pred["scores"] = scores_new
         self.last_pred["classes"] = classes_new
 
-        # 同步命中检测用的 masks_disp（直接用整图即可）
+        # masks_disp for synchronous hit detection
         self.last_pred["masks_disp"] = masks_full.copy() if masks_full is not None else None
         self.last_pred["disp_size"] = (H, W)
 
-        # 重绘
+        # redraw
         alp = self.slider_alpha.value() / 100.0 if hasattr(self, "slider_alpha") else 0.5
         score_thr = float(self.seg_score_thr) if hasattr(self, "seg_score_thr") else 0.0
-        frame_ref = self.last_pred.get("frame", None)  # 允许 None，draw_overlay 内已支持
+        frame_ref = self.last_pred.get("frame", None)
         overlay = draw_overlay(self.last_img, frame_ref,
                                self.last_pred["boxes"],
                                self.last_pred["scores"],
@@ -2222,21 +2206,21 @@ class Main(QtWidgets.QMainWindow):
 
         n_now = self.last_pred["boxes"].shape[0] if self.last_pred["boxes"] is not None else 0
         self.set_process_info(f"Process Info (Seg): {n_now} objects")
-        self.append_log("[Brush] 已提交画笔实例并重绘。")
+        self.append_log("[Brush] The brush instance has been submitted and repainted.")
 
 
     def _mask_to_fullsize(self, m, box, target_hw):
         """
-        把任意形状/通道的 mask 变成整图 (H,W) 的 uint8 二值(0/255)。
-        - m: np.ndarray, 可能是 (H,W), (H,W,1), ROI 尺寸, 或者 float/bool 类型
-        - box: [x1,y1,x2,y2] 或 None
-        - target_hw: (H,W) 目标整图尺寸（通常是 self.last_img.shape[:2]）
+        Turns an arbitrary shape/channel mask into a uint8 binary (0/255) of the whole graph (H,W).
+        -m: np.ndarray, possibly (H,W), (H,W,1), ROI size, or float/bool type
+        -box: [x1,y1,x2,y2] or None
+        -target_hw: (H,W) Target full image size (usually self.last_img.shape[:2])
         """
         H, W = target_hw
         a = np.asarray(m)
         a = np.squeeze(a)
 
-        # -> 二值 uint8
+        # Binary uint8
         if a.dtype != np.uint8:
             if np.issubdtype(a.dtype, np.floating):
                 a = (a > 0.5).astype(np.uint8) * 255
@@ -2253,7 +2237,7 @@ class Main(QtWidgets.QMainWindow):
             y1 = max(0, min(H-1, y1)); y2 = max(0, min(H, y2))
             bw, bh = max(0, x2-x1), max(0, y2-y1)
             if bw > 0 and bh > 0:
-                # 把 a 调整到 bbox 尺寸再贴回
+                # Adjust the a to the bbox size and paste it back
                 if a.shape[:2] != (bh, bw):
                     a_roi = cv2.resize(a, (bw, bh), interpolation=cv2.INTER_NEAREST)
                 else:
@@ -2261,7 +2245,8 @@ class Main(QtWidgets.QMainWindow):
                 full[y1:y2, x1:x2] = (a_roi > 0).astype(np.uint8) * 255
                 return full
 
-        # 没有 box 或者 box 无效：若 a 与整图同尺寸，直接用，否则整体 resize 到整图
+        # No box or invalid box: if a is the same size as the whole image, use it;
+        # otherwise, resize to the whole image
         if a.shape[:2] == (H, W):
             return a
         else:
@@ -2270,8 +2255,8 @@ class Main(QtWidgets.QMainWindow):
 
     def _recompute_boxes_from_full_masks(self, masks_full):
         """
-        从整图 (N,H,W) 二值 mask 重新计算 boxes（外接矩形）。
-        返回 float32 的 (N,4) xyxy；若某个实例为空，则给零框。
+        Recompute boxes (bounding rectangles) from the full (N,H,W) binary mask.
+        Returns float32 (N,4) xyxy. If an instance is empty, a zero box is given.
         """
         if isinstance(masks_full, list):
             arr = np.stack(masks_full, axis=0) if masks_full else np.zeros((0, 0, 0), np.uint8)
@@ -2292,7 +2277,7 @@ class Main(QtWidgets.QMainWindow):
         return boxes
 
     def _refresh_overlay_from_masks(self):
-        """用当前 full masks 重画 overlay（无 box）"""
+        """Redraw overlay with current full masks (no box)"""
         pred = self.last_pred
         if pred is None:
             return
