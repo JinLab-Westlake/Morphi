@@ -65,12 +65,12 @@ AI-powered organoid analysis software integrating:
 
 <h3>Option 2: Run from source</h3>
 
-<p>Clone the repository:</p>
+<p>Step1: Clone the repository:</p>
 
 <pre><code>git clone https://github.com/JinLab-Westlake/Morphi.git
 cd Morphi</code></pre>
 
-<p>Create a virtual environment:</p>
+<p>Step2: Create a virtual environment:</p>
 
 <pre><code>python -m venv .venv</code></pre>
 
@@ -79,6 +79,7 @@ cd Morphi</code></pre>
 <h4>1. Linux / macOS</h4>
 
 <pre><code>source .venv/bin/activate</code></pre>
+
 
 <h4>2. Windows (Command Prompt / PowerShell)</h4>
 
@@ -89,11 +90,11 @@ cd Morphi</code></pre>
 .venv\Scripts\Activate.ps1</code></pre>
 
 
-<p>Install the required dependencies:</p>
+<p>Step3: Install the required dependencies:</p>
 
 <pre><code>pip install -r requirements.txt</code></pre>
 
-<p>Run Morphi:</p>
+<p>Step4: Run Morphi:</p>
 
 <pre><code>python morphi/main.py</code></pre>
 
