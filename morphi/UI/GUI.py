@@ -19,7 +19,9 @@ import glob, tempfile
 from Label_tool.brush_editor import InstanceBrushEditor
 from Fluo_proccess.Canny.canny_edge_detec import EdgeClusterParams
 from pathlib import Path
-
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
 
 
 class Main(QtWidgets.QMainWindow):
@@ -94,6 +96,12 @@ class Main(QtWidgets.QMainWindow):
         act_export_masks_json = QtGui.QAction("Export mask (JSON)…", self)
         act_export_masks_json.triggered.connect(self._save_masks_json_only)
         menu.addAction(act_export_masks_json)
+
+        # --- export analysis results to Excel ---
+        act_export_excel = QtGui.QAction("Export results (Excel)…", self)
+        act_export_excel.triggered.connect(self._save_results_excel)
+        menu.addAction(act_export_excel)
+
 
         act_edit = QtGui.QAction("Edit Labels…", self)
         act_edit.triggered.connect(self._open_label_editor)
@@ -348,7 +356,7 @@ class Main(QtWidgets.QMainWindow):
         #     self.append_log(f"[Surv] Loaded: {name} -> {path}")
         #     self.btn_run_surv.setEnabled(self.last_img is not None)
         # if all models state change, then refresh button
-        self._update_run_button()
+        self._update_run_buttons()
 
 
 
@@ -1141,6 +1149,181 @@ class Main(QtWidgets.QMainWindow):
 
         self.append_log(f"[Export] mask JSON saved: {save_path}")
         QtWidgets.QMessageBox.information(self, "Export Mask (JSON)", f"Already exported: \n{save_path}")
+
+    def _save_results_excel(self):
+        """Export current segmentation results to an Excel workbook."""
+
+        # Check segmentation result
+        if self.last_pred is None or self.last_mode != "seg":
+            QtWidgets.QMessageBox.information(
+                self, "Export Results (Excel)", "Please run segmentation first."
+            )
+            return
+
+        boxes = self.last_pred.get("boxes")
+        scores = self.last_pred.get("scores")
+        classes = self.last_pred.get("classes")
+        masks = self.last_pred.get("masks")
+
+        if boxes is None or len(boxes) == 0:
+            QtWidgets.QMessageBox.information(
+                self, "Export Results (Excel)",
+                "The current result contains no detected objects."
+            )
+            return
+
+        # Output path
+        image_path = getattr(self, "last_img_path", None)
+        image_name = os.path.basename(image_path) if image_path else ""
+        stem = os.path.splitext(image_name)[0] if image_name else "segmentation"
+        default_name = f"{stem}_results.xlsx"
+
+        save_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, "Export Results to Excel", default_name,
+            "Excel Workbook (*.xlsx)"
+        )
+        if not save_path:
+            return
+        if not save_path.lower().endswith(".xlsx"):
+            save_path += ".xlsx"
+
+        # Class ID -> class name
+        id2name = {}
+        if hasattr(self, "seg_seg") and hasattr(self.seg_seg, "class_names"):
+            class_names = self.seg_seg.class_names
+            if isinstance(class_names, dict):
+                id2name = {int(k): str(v) for k, v in class_names.items()}
+            elif isinstance(class_names, (list, tuple)):
+                id2name = {i: str(v) for i, v in enumerate(class_names)}
+
+        # Image information
+        if self.last_img is not None:
+            H, W = self.last_img.shape[:2]
+            image_area = H * W
+        else:
+            H = W = image_area = 0
+
+        # Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Instances"
+
+        headers = [
+            "instance_id", "image_name", "image_path",
+            "label_id", "label_name", "score",
+            "x1", "y1", "x2", "y2",
+            "width", "height", "bbox_area",
+            "mask_area", "mask_fraction"
+        ]
+        ws.append(headers)
+
+        header_fill = PatternFill("solid", fgColor="D9EAF7")
+        for cell in ws[1]:
+            cell.font = Font(bold=True)
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        # Instances
+        N = len(boxes)
+        total_mask_area = 0
+
+        for i in range(N):
+            box = np.asarray(boxes[i]).reshape(-1)
+            x1, y1, x2, y2 = map(float, box[:4]) if len(box) >= 4 else (0.0,) * 4
+
+            width = max(0.0, x2 - x1)
+            height = max(0.0, y2 - y1)
+            bbox_area = width * height
+
+            score = float(scores[i]) if scores is not None and i < len(scores) else None
+            label_id = int(classes[i]) if classes is not None and i < len(classes) else -1
+            label_name = id2name.get(label_id, "")
+
+            mask_area = 0
+            if masks is not None and i < len(masks):
+                mask = np.squeeze(np.asarray(masks[i]))
+
+                if mask.ndim == 2:
+                    if mask.shape == (H, W):
+                        full_mask = mask
+                    else:
+                        full_mask = self._mask_to_fullsize(mask, boxes[i],(H, W))
+                    mask_area = int(
+                        np.count_nonzero(full_mask > 0)
+                    )
+
+            total_mask_area += mask_area
+            mask_fraction = mask_area / image_area if image_area else None
+
+            ws.append([
+                i, image_name, image_path or "",
+                label_id, label_name, score,
+                x1, y1, x2, y2,
+                width, height, bbox_area,
+                mask_area, mask_fraction
+            ])
+
+        # Number formats
+        for row in ws.iter_rows(min_row=2):
+            if row[5].value is not None:
+                row[5].number_format = "0.0000"
+
+            for idx in range(6, 13):
+                row[idx].number_format = "0.00"
+
+            if row[14].value is not None:
+                row[14].number_format = "0.000000"
+
+        # Sheet formatting
+        ws.freeze_panes = "A2"
+        ws.auto_filter.ref = (
+            f"A1:{get_column_letter(ws.max_column)}{ws.max_row}"
+        )
+
+        widths = [12, 28, 55, 12, 20, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15]
+        for i, width in enumerate(widths, start=1):
+            ws.column_dimensions[get_column_letter(i)].width = width
+
+        # Summary
+        summary = wb.create_sheet("Summary")
+        summary_rows = [
+            ["Parameter", "Value"],
+            ["Image name", image_name],
+            ["Image path", image_path or ""],
+            ["Image width", W],
+            ["Image height", H],
+            ["Number of instances", N],
+            ["Total instance mask area (px)", total_mask_area],
+        ]
+
+        for row in summary_rows:
+            summary.append(row)
+
+        for cell in summary[1]:
+            cell.font = Font(bold=True)
+            cell.fill = header_fill
+
+        summary.column_dimensions["A"].width = 32
+        summary.column_dimensions["B"].width = 60
+
+        # Save
+        try:
+            wb.save(save_path)
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self, "Export Results (Excel)",
+                f"Failed to save Excel file:\n\n{e}"
+            )
+            return
+
+        self.append_log(
+            f"[Export] Excel results saved: {save_path} | {N} instances"
+        )
+
+        QtWidgets.QMessageBox.information(
+            self, "Export Results (Excel)",
+            f"Exported {N} instances.\n\n{save_path}"
+        )
 
     def _on_ec_finished_show_only(self, result=None):
         """EdgeCluster is done: preview only, and hand the save action over to the existing "Save button"."""
