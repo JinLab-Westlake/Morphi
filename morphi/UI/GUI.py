@@ -1152,7 +1152,6 @@ class Main(QtWidgets.QMainWindow):
 
     def _save_results_excel(self):
         """Export current segmentation results to an Excel workbook."""
-
         # Check segmentation result
         if self.last_pred is None or self.last_mode != "seg":
             QtWidgets.QMessageBox.information(
